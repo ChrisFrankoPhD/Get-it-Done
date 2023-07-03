@@ -21,6 +21,7 @@ app.post("/todos", async(req, res) => {
             "INSERT INTO todo(description) VALUES($1) RETURNING *", 
             [description]
         );
+        console.log(newTodo.rows[0]);
         res.json(newTodo.rows[0]);
     } catch (err) {
         console.error(err.message);
@@ -95,7 +96,7 @@ app.get("/todos/search/:search", async(req, res) => {
             "SELECT * FROM todo WHERE description LIKE ('%' || $1 || '%') ORDER BY todo_id asc",
             [search]
         );
-        console.log("searching...");
+        // console.log("searching...");
         res.json(allTodos.rows)
     } catch (err) {
         console.error(err.message);
