@@ -581,7 +581,128 @@ app.get("/todos/search/:search", async(req, res) => {
 
 ## Building Our React Frontend
 
+### Intiial Setup
+
 - so far we have set up how we want the backend to work, how express and node will interact with our database, now we want to set up react, and let react interact with our server so that our react frontend will be the one sending the API requests to our server instead of postman
 - but first we know we will liekly want to be using bootstrap within our react app for nice and easy styling, so we will add bootstrap 
 - to do this we go to the bootstrap website and get the "CDN" links from the bootstrap introduction page, we want to add both of these links to the "client/public/index.html" file, which is the public html file that will be loaded when our webpage initially loads, we add the CSS file to head element of the html, and the JS file to the very bottom of the body element 
-- we also want to make some files for the components we imagne we will have, such as the 
+- we also want to make some files for the components we imagne we will have, such as the full list todo list, an edit todo view, and an input a todo view, and we call them ListTodo.js, EditTodo.js, and InputTodo.js, and we will keep all these in a new Components folder inside of src
+- I am not going to go very in depth in React, just more my choice for this speciific app, since we have full react notes from the ReactCourse folder
+
+### Building InputTodo Component
+
+- so really we are just building a react front end now, and i will go over some of the basics for inital setup since that is the hardest palce to get going sometimes,
+- we have our App.js file that we know everything is going to run through, we can erase everything inside the default return statement, and also get rid of the icon import at the top, I am going to leave the `import './App.css';` here
+- we want to make one of our components so that we can show someting on the App page, and we will start with the InputTodo component, we can make a very simple functional component that that just returns its name so we can keep track of where it is on the page:
+```
+const InputTodo = () => {
+    return (
+        <h1>Input Todo</h1>
+    )
+}
+
+export default InputTodo
+```
+- and we want to export default it so that we can import it in the app component, and we when we do so our App.js looks like:
+```
+import './App.css';
+import InputTodo from './Components/InputTodo';
+
+function App() {
+  return (
+    <>
+      <InputTodo />
+    </>
+  );
+}
+
+export default App;
+```
+- so we import the InputTodo component and then we add it to the App's return statement
+- now when we start our server with `npm start`, in the browser on localhost:3000, we can see the "Input Todo" h1 on the page
+- we can style this a bit better with bootstrap so it is in the middle:
+```
+// InputTodo.js File
+const InputTodo = () => {
+    return (
+        <div className="container">
+            <div className="row text-center mt-5">
+                <h1>Input Todo</h1>
+            </div>
+        </div>
+    )
+}
+
+export default InputTodo
+```
+- and now we see our component is nicely centered
+- so i am not going to do this for every design choice, but now we have the start of a component on our page
+- we want to think about what functionality we want this app to have, and our component choices, and what we put in each component should be driven by acheiveing that 
+- for example, we clearly want our input todo component to have the ability to add items to our todo list, so we want to make some sort of form submission type feature
+
+#### Input Form
+
+- so in react, we build an input form for the add Todo feature in the InputTodo component, our component returns:
+```
+const InputTodo = () => {
+    const [description, setDescription] = useState("");
+
+    const updateDescription = (e) => {
+        setDescription(e.target.value);
+        // console.log(description);
+    }
+
+return (
+    <div className="container">
+        <div className="row text-center mt-5">
+            <h1>Input Todo</h1>
+            <form className="w-100 mt-3 d-flex justify-content-center" onSubmit={onSubmitForm} >
+                <div className="w-50 d-flex justify-content-center border border-1 border-secondary-subtle bor">
+                    <input className=" form-control border-0" name="inputTodo" placeholder="What do you need ToDo?" value={description} onChange={updateDescription} />
+                    <button className="btn btn-primary" >Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+)
+```
+- so there is some styling that we can ignore, but we have a form component, and within that we have a input and button component
+- first we want to deal with being able to use the input the user puts into the form input, so we create a state by using the `useState()` react hook that we call descirption, since that is the name of the column for the ToDo list items in our database, and set the form value to be equal to that state
+    - this may seem confusing at first, since the user types into the form to decide the form value, but here we are setting the form value to the react state, but what we are really doing is making that react is the one true god here, we also have an `onChange` attribute set here that calls the `updateDescription` handler everytime the value of the input changes, and we see that the handler just updates the react state to be equal to the value of the form
+    - so what is happening is that with every keystroke, the react state is updated by `updateDescription`, which updates the `description` state to the whatever the user typed, and thus the `value` field of the input now displays what the user typed, so we are working slightly backwards by making the user *really* update the react state, and the form just displaying the react state, but this allows the react state to be the true source of the data, and thus we can pass that state around to other functions if we need it
+- so now that we have a way to make the user update the state that we want to eventually send to our server to add to the database, we need to have a way for the user to actually submit the form to trigger that data sending
+- we do this on the parent form element and not the button element, since it is the form that is actually going to get submitted in the HTML code, we see that on the form element we have the `onSubmit={onSubmitForm}` property, which will call another handler function that we need to define called `onSubmitForm` when the form is submitted, so when the button is clicked
+- we can add this function to the component:
+```
+const onSubmitForm = async (e) => {
+    e.preventDefault();
+    try {
+        const body = { description };
+        const response = await fetch("/todos", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        console.log(data);
+    } catch (err) {
+        console.error(err.message);
+    }
+}
+```
+- so this above functione gets called when the form is submitted, and the first thing we want to do is `e.preventDefault();`, `e` is the event itself and that is automatically passed to the event handler when we define the  `onSubmit={onSubmitForm}` int he form HTML itself, and the `preventDefault()` function acts on the event by prevent the default behaviour of the event, which in this case is stops the page from being refreshed each time the form is submitted
+- after this we want to use a try catch block for the actual logic of the function to make sure we can deal with possble errors, and here we define and set a `body` parameter to an object with the description state as its only property
+    - note when we have some variable like `property = value` the syntax `const x = { property }` is the same as saying `const x = {property: value}`, so it is a short form for defining an object, so in our case `const body = { description };` is just `const body = { description: description_state }`
+- we then make an asynchronous `fetch()` call to our server settign the response to the `response` variable
+- here we have to make sure to choose the appropiate routing and API request type within the `fetch()` method, so here we want to add a Todo to our list, and therefore to the database, so within our server.js file on the backend, we know that functionality is a POST request at the /todos route, so the routing is easy enough we say `fetch("/todos",` to tell it to go to that URI, then we give the fetch request an object of options where we can tell it what data to give and what request type to make, etc
+- previously we never had to do this since we were always making GET requests, in which we would just want to get data from a certain route, so everything on our side was handled by the URL we gave it, we can see more about the options we can give the fetch request in the mozilla docs: https://developer.mozilla.org/en-US/docs/Web/API/fetch
+    - in general though, we want to give it a `method`, which we specify as `"POST"`, 
+    - we also want to give it a list of "headers", headers are a way for us to pass additional information in HTTP requests, they are not always neccesary but are useful to give more info in our requests/responses that the user can use, in our case we just want to set a `Content-Type` of `application/json`, this header indicates the media type of the resource being sent, and we are sending JSON data, **in fact, we see when we eliminate this header, we still get a successful response, but the text is not added to teh database, we just add an empty row instead**
+    - lastly, and most importantly, we also want to actually set the body of the request to the info we want to send, wich in this case is the `body` variable we just defined with the `{ description }` object, however we want to call `JSON.stringify(body)` instead of just the body object, since this takes the object and formats it as a string so it can be sent easily and without error in the request
+- with these we can send a basic request, and now when we test this and submit the form in the browser, we see we get a request sent back printed in the console, and when we log into our database we can see that whatever we input into the form is correctly added to the database
+- **the note below is before fixing an error, we originally had `console.log(response)` immediately after the fetch request, but then changes it to `const data = await response.json();` and `console.log(data)`, which now works as expected**
+    - **note, in the browser** it looks like we did not get the right response, since on our server we say `res.json(newTodo.rows[0]);` when we built it above, which should make the response just the relevant rows of daa that were added, but the reponse is a response object with a bunch of info and none of it seems to be the data that was added, but if we look at the network, we see that if we click on the fetch request, we can see teh response, and it looks liek the response we saw in Postman and the one we expect, **however, this is because we did not jsonify our data, we have to do `const data = await response.json();` to get our proper response in a json format, then if we di `console.log(data)`, we get our expected response printed, which in this case was `{todo_id: 17, description: 'test test 8'}`
+
+
