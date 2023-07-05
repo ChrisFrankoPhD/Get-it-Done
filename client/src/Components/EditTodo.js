@@ -1,7 +1,7 @@
 import {useState} from "react";
 
 const EditTodo = ({todoObj}) => {
-    const [description, setDescription] = useState(todoObj.description)
+    const [description, setDescription] = useState(todoObj.description);
 
     console.log("building EDITTODO");
     console.log(todoObj);
@@ -33,7 +33,7 @@ const EditTodo = ({todoObj}) => {
         }
     }
 
-    const modalID = `modal-${todoObj.todo_id}`
+    const modalID = `modal-${todoObj.todo_id}`;
     console.log(modalID);
     return (
         <dialog id={modalID} className="w-50" onClick={() => setDescription(todoObj.description)}>
@@ -45,8 +45,8 @@ const EditTodo = ({todoObj}) => {
                     <input className="form-control border-0" name="editTodo" value={description} onChange={editDescription} /> 
                 </div>
                 <div className="d-flex flex-column ms-auto">
-                        <button className="btn btn-success flex-grow-1" >Save</button>
-                        <button type="button" className="close py-1 px-2 align-self-end" onClick={() => setDescription(todoObj.description)}>Close</button>
+                    <button className="btn btn-success flex-grow-1" >Save</button>
+                    <button type="button" className="close py-1 px-2 align-self-end" onClick={() => setDescription(todoObj.description)}>Close</button>
                 </div>
             </form>
         </dialog>
