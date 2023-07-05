@@ -705,4 +705,272 @@ const onSubmitForm = async (e) => {
 - **the note below is before fixing an error, we originally had `console.log(response)` immediately after the fetch request, but then changes it to `const data = await response.json();` and `console.log(data)`, which now works as expected**
     - **note, in the browser** it looks like we did not get the right response, since on our server we say `res.json(newTodo.rows[0]);` when we built it above, which should make the response just the relevant rows of daa that were added, but the reponse is a response object with a bunch of info and none of it seems to be the data that was added, but if we look at the network, we see that if we click on the fetch request, we can see teh response, and it looks liek the response we saw in Postman and the one we expect, **however, this is because we did not jsonify our data, we have to do `const data = await response.json();` to get our proper response in a json format, then if we di `console.log(data)`, we get our expected response printed, which in this case was `{todo_id: 17, description: 'test test 8'}`
 
+### Building ListTodo Component
 
+#### Initial Component with State
+
+- so i built this without watching the tutorial video and then am watching it now as i make notes on wat I did so that I can ntoe the differences between the video and my approach and where I went wrong, so I can explain the reasons why my appraoch might be not great, or maybe find some things I did tha seem to be an actual imporvement over the video
+- we want to have a component that displays our entire list of course, so that is what we are building, we are going to make it in the ListTodo.js file
+- so to build his component, he gets a premade table from the w3school website, that built in headers that he is going to use it seems as delete and edit buttons, my table was made by me and is just a list of ListItems components that I will explain later
+- the first thing we need todo is have the basic ListTodo component:
+```
+import {useEffect, useState} from "react";
+
+const ListTodo = () => {
+    const [todos, setTodos] = useState([])
+    
+
+    return (
+        <main className="container w-50 mt-4">
+            <div className="row d-flex flex-column justify-content-center">
+                todo list
+            </div>
+        </main>
+    )
+}
+
+export default ListTodo
+```
+- so this does nothin for us at the moment, but we notice that we return some HTML that is going to be in the format of a centered list, and we also have created a state that we are going to store our todo list items in with `const [todos, setTodos] = useState([])`, also notice our course we have imported the `useState` hook from react, but we also inport the `useEffect` hook as well, which allows us to run a defined callback funtcion each time the component render, or whenever some state in our program chnages that we decide, we will use this next
+
+#### Calling the API to Get all Todos
+
+- now of course we want to be able to actually fill the `todos` state by using another fetch request to our server to get that data, this is where we use the `useEffect` hooK:
+```
+import {useEffect, useState} from "react";
+
+const ListTodo = () => {
+    const [todos, setTodos] = useState([])
+
+    const getTodos = async () => {
+        try {
+            const response = await fetch("/todos")
+            const data = await response.json()
+            await setTodos(data)
+            // console.log("got todos:");
+            // console.log(todos[0]);  
+        } catch (error) {
+            console.error(error.message);
+        }   
+    }
+
+    useEffect(() => {
+        getTodos();
+    }, [])
+
+    return (
+        <main className="container w-50 mt-4">
+            <div className="row d-flex flex-column justify-content-center">
+                todo list
+            </div>
+        </main>
+    )
+}
+
+export default ListTodo
+```
+- so above we added the `useEffect` hook, which simply calls another function that we have defined within our component called `getTodos()`, the reason we call this function instead of putting the logic right in useEffect is because we want this fucntion to be asyncronous, but we cannot define the callback of useEffect to be async, we end up with an error
+- **note** that we pass `useEffect` an empty array as its dependencies, this is becuase `useEffect` will get called each time one of its dependecies is changed, so we could give it a state, and each tiem the state is updated we would call `useEffect`, in this case we just want it to be called when the page is loaded so we give it an empty array, if we gave it nothing, then it would be called constantly, and that would make too many API calls for us, so we do not want that
+- so each time our component renders we call useEffect, and that will get `getTodos`, inside `getTodos()`, we see that is an async function that uses fetch to make a GET reques to the "/todos" route, which is really the http://localhost:5000/todos" route because of the proxy, 
+- remember that the default behaviour of fetch is a GET request, so we do not need to pass in an options object witht he request type, and since we are not giving anything to the endpoint, no authorization and we just want to recieve the default data, we do not need any headers or anything
+- so teh response we get is saved as response, then we want to parse that json response into useful data with `const data = await response.json()`, and we want to make sure to use `await` again since this takes meaningful time, and alstly we want to set the `todos` state to the new data with `await setTodos(data)`, here we call await but I am not sure it is needed, some places online do it, but it works for me either way
+- **note** the reason we do not need to sift through the data when we setTodos is because early on our backend, in server.js, we set the response for these GET requests to `res.json(allTodos.rows)`, so only the data rows themselves are in the response, so now `todos` is a list of objects, each one having an `todo_id` and `description`, we can see this if we print `todos` after setting it:
+```
+(23) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+0: {todo_id: 1, description: 'clean my room'}
+1: {todo_id: 2, description: 'buy a gallon of pcp'}
+2: {todo_id: 3, description: 'finish this coding project'}
+...
+...
+```
+- so a big array, each item being an object with our data row
+
+#### Using the Todo Data To Build Page
+
+- so now that we have all of our list items in the `todos` state, we want to actually build a bunch of list items with it, in a way that does not depend on the number of items in the list of course, we do this by mapping the array onto a function that builds each list item individually:
+```
+// Above ListTodo function, but int he same ListTodo.js file: new ListItem Component
+const ListItem = ({todoObj}) => {
+    return (
+        <div className="d-flex border p-0">
+            <div className="list-num border-end p-2 text-center d-flex justify-content-center align-content-center flex-wrap">
+                <h3 className="m-0">{todoObj.todo_id}</h3>
+            </div>
+            <div className="list-det lead d-flex flex-column justify-content-center p-2 ">
+                <p className="m-0">{todoObj.description}</p> 
+            </div>
+        </div>
+    )
+}
+
+// Inside ListTodo Component
+useEffect(() => {
+        getTodos();
+    }, [])
+    
+    const todoHTML = todos.map((todoObj, idx) => {
+        return (
+            <ListItem todoObj={todoObj} key={idx} />
+        )
+    })
+
+    return (
+        <main className="container w-50 mt-4">
+            <div className="row d-flex flex-column justify-content-center">
+                {todoHTML}
+            </div>
+        </main>
+    )
+
+```
+- so above we see that with in the ListTodo component, we now have all of our list items in a `{todoHTML}` variable that will be returned in the HTML markup, we build `todoHTML` in the function above by mapping the `todos` state array onto the callback function with `const todoHTML = todos.map((todoObj, idx) => { callback }`, where the callbakc function is called for every item in the array, and the we pass each array item to the function as `todoObj` and the index of said item as `idx`
+- so for each item in our map, we are creating a new ListItem component, and to that component constructor, we are passing the data row itself, which is an object in the form `{todo_id: 1, description: 'clean my room'}` as shown above, and we are giving it a `key` of it `idx`, which makes them all unique components, which is needed by react
+    - so this means the final `todoHTML` variable is going to consist of HTML markup in the form of:
+    ```
+    <ListItem todoObj={todoObj-1} key={1} />
+    <ListItem todoObj={todoObj-2} key={2} />
+    <ListItem todoObj={todoObj-3} key={3} />
+    ...
+    ```
+    - and will fit into our HTML markup returned by the ListTodo component as:
+    ```
+    return (
+        <main className="container w-50 mt-4">
+            <div className="row d-flex flex-column justify-content-center">
+                <ListItem todoObj={todoObj-1} key={1} />
+                <ListItem todoObj={todoObj-2} key={2} />
+                <ListItem todoObj={todoObj-3} key={3} />
+                ...
+            </div>
+        </main>
+    )
+    ```
+    - so in the end we are just going to have a variable number of HTML components of eac ListItem
+- now we just need to build the HTML for each list item to make this work, which we do in the ListItem component we defined above:
+```
+// Above ListTodo function, but int he same ListTodo.js file: new ListItem Component
+const ListItem = ({todoObj}) => {
+    return (
+        <div className="d-flex border p-0">
+            <div className="list-num border-end p-2 text-center d-flex justify-content-center align-content-center flex-wrap">
+                <h3 className="m-0">{todoObj.todo_id}</h3>
+            </div>
+            <div className="list-det lead d-flex flex-column justify-content-center p-2 ">
+                <p className="m-0">{todoObj.description}</p> 
+            </div>
+        </div>
+    )
+}
+```
+- so for each list item, we give the ListItem function the todo object. and we create a simple little table liek structure of the list number and the description itself, and we extract the info from each `todoObj` with typical JS as `{todoObj.todo_id}` and `{todoObj.description}`, and we know how to access them by looking at the printout of the API response itself and seeing that we have the expected `todo_id` and `description` properties
+- so this HTML is going to be rendered for each `ListItem` component that is returned by the ListTodo component that we showed above
+- now we have a dynamic list of all of our todo list items, currently it is only updated when the page loads, and we want to add some functionality so that when a list item is added, we make a new API call and update the list as well, we can do this in a clunky way by adding `window.location = '/'` to the end of the `onSubmitForm` submission handler for the InputTodo component, and what this does is refresh the page to the default route '/', whenever the button is clicked, but this does a full refresh and does not look good, ideally we would want it to just happen in the background and get updated without a full refresh, will think of a way to do this
+
+#### Building the Delete Button
+
+#### Delete Button HTML 
+
+- up next he is going to build the delete and then edit buttons my implementation does not have those yet, and my vision has them implemented a but different than his, but the functionality should be the same so we will start there
+- in my implementation, i will add a delete and edit button to the `ListItem` component when we construct the HTML for each component, this is easy enough using bootstrap, the HTML return of the ListItem component now looks like:
+```
+return (
+    <div className="d-flex border p-0">
+        <div className="list-num border-end p-2 text-center d-flex justify-content-center align-content-center flex-wrap">
+            <h3 className="m-0">{todoObj.todo_id}</h3>
+        </div>
+        <div className="list-det lead d-flex flex-column justify-content-center p-2 ">
+            <p className="m-0">{todoObj.description}</p> 
+        </div>
+        <div className="d-flex flex-column ms-auto">
+            <button className="btn btn-secondary flex-grow-1">Edit</button>
+            <button className="btn btn-danger flex-grow-1" onClick={() => deleteTodo(todoObj, filterTodos)}>Delete</button>
+        </div>
+    </div>
+)
+```
+- so here we are looking at the two button elements in the new last div element, we see one is for editing and one is for deleting
+- the delete button then has an `onClick` property set for the event handler, **where we use an arrow function (`() => function`) to call the `deleteTodo` function,** we have to do this since we are passing the function arguments `(todoObj, filterTodos)`, since if we just did `onClick={deleteTodo(todoObj, filterTodos)}>`, **then the function would get called when the code is executed at the time of component creation, thus deleting each list item when the page loads**, I did this at first by accident and my database was cleared, thats a big oops, instead we just give `onClick` an empty function that points to our function when ever it is clicked
+- we also notice we are passing a new `filterTodos` reference to the function, this is actually a function I define in the `ListTodo` component that calls `setState` on our `todos` state, and must be passed from `ListTodo` -> `ListItem` -> `deleteTodo`, where it is finally called
+    - our other option here is to pass `todos` and `setTodos` down the chain instead, but this seemed more reasonable
+
+#### Making the Delete Todo click Handler 
+
+- we will see the reason why we must do this in the `deleteTodo` function below:
+```
+// List Item Component, Showing deleteTodo function
+const ListItem = ({todoObj, filterTodos}) => {
+
+    const deleteTodo = async (todoObj, filterTodos) => {
+        try {
+            const response = await fetch(`/todos/${todoObj.todo_id}`, {
+                method: "DELETE",
+            })
+            const data = await response.json()
+
+            // console.log(todos);
+            // setTodos(todos.filter((todo) => todo.todo_id !== todoObj.todo_id));
+            // console.log(todos);
+
+            filterTodos(todoObj.todo_id);
+
+            console.log(data);
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+
+// Inside Parent ListTodo Component, Showing filterTodos Function, and Passing it to ListItem Component
+const ListTodo = () => {
+    const [todos, setTodos] = useState([])
+
+    const filterTodos = (todoId) => {
+        // console.log("filterTodos initiated");
+        setTodos(todos.filter((todo) => todo.todo_id !== todoId));
+    };
+...
+...
+    const todoHTML = todos.map((todoObj, idx) => {
+        return (
+            <ListItem todoObj={todoObj} key={idx} filterTodos={filterTodos} todos={todos} setTodos={setTodos}/>
+        )
+    })
+```
+- so above we can see the chain of passing the `filterTodo` function defined in the Parent `ListTodo` component, which is then passed into `ListItem` as it is being made as a prop, we then see in the `ListItem` component the function is deconstructed in the regular prop way like `const ListItem = ({todoObj, filterTodos}) => {`, so it can now be used within this component, we then define the `deleteTodo` function, where we pass `filterTodos` in once again as an argument, and it finally gets called within the function
+    - i had big issues with this that I thought were for a myriad of reasons, but it turns out I was deconstructing the prop incorrectly, at first I kept just listing `filterTodos` as an argument for the `deleteTodos` function, and then it would give me an error that `filterTodos is not a function`, I thought maybe this was due to it being an arrow function defined as a const, so changed the `filterTodos` definition to the regular `function fiterTodos() {}` style, but this didnt work
+    - then I realized we need to recieve the prop first in the `ListItem` component, and deconstruct it as a prop with the `{filterTodos}` syntax, only then can we properly pass it into `deleteTodo` to get called appropiately
+- before going into `filterTodos` more we will talk of `deleteTodo`
+- so `deleteTodo` is called when the delete button is pushed on a `ListItem`, and then we use a try catch block to make a `fetch` API `DELETE` request to our server, calling the `app.delete("/todos/:id"` function, we see for this request we need to specify the `todo_id` in the route, as shown by the route `"/todos/:id"` int he delete request definition, so we do this by the URI in 
+```
+const response = await fetch(`/todos/${todoObj.todo_id}`
+``` 
+- where we use a string literal and the passed in `todoObj` to get the id of the todo item, ensuring the proper item is deleted
+- we also see since it is a delte request, we need to specify this in the fetch options object with the `method: "DELETE"` property, but we dont need to add anythign else sicne were not passing more info other than the ID in teh route to the server
+- we then jsonify the response as `data`, which is actually not needed since we dont do anythign with the response, so i will comment that out, but is useful when testing to pront the response to make sure its working
+- then finally we want the updated list to show without having to fully refresh the page, and we can do that by just deleting the todo item from our `todos` state, so that we are insync with the server, so that it no longer displays in the list, then the next tiem the page is actually refreshed, or the GET all list items is run again, we will still be consistent since it was deleted from the server and it is no longer in the `todos` state
+- so we accomplish this by "filtering" the todos state, in our case we do that by calling teh `filterTodos(todoObj.todo_id);` function that we passed down the chain from `ListTodo`, looking at this function again:
+```
+const filterTodos = (todoId) => {
+    setTodos(todos.filter((todo) => todo.todo_id !== todoId));
+};
+```
+- here we are able to use the `todos` state and `setTodos` state handler since we are now back in the `ListTodo` component, so this function is really just a mask for the calling `setTodos` in a different component
+- we call `setTodos(todos.filter((todo) => todo.todo_id !== todoId));`, which we see acts on the `todos` state with a `filter()` method, the `filter()` method creates a copy of an array that is filtered down based on some conditional given in the callback 
+- so in our case we are caling `filter()` on the `todos` state, and the callback of filter can have 3 arugments, the first being the value fromt he array currently being tested, the second being the index of the value, and the third being the array itself, so it is acting like a for loop really, 
+- so we pass only thr `todo` value being tested to the callback, which then executes the function `todo.todo_id !== todoId`, and if this returns a value of `false` the array item is filtered out, and kept if the value is `true`, so in our case we look through all the ids of the todo items, and when we find the item where the id matches the one we just clicked delete on, we filter it out,
+- so in this way, an array is built by `todos.filter((todo) => todo.todo_id !== todoId)`, with all items but the one that got deleted, then we set this array as the `todo` state with `setTodos()`
+    - one note here is that the syntax of the callback function was new to me, normally we see callbacks with curly braces for the logic, but the above is just a quick one line way to write a single expression since that is all we need, the syntax `(todo) => todo.todo_id !== todoId` is equivalent to:
+    ```
+    (todo) => {
+        if (todo.todo_id !== todoId) {
+            return true
+        } else {
+            return false
+        }
+    }
+    ```
+- so now we have a properly working delte button that udates our page right away
+- we also see we could have passed `todos` and `setTodos` through the cahin from `ListTodo` to `ListItem` to `deleteTodo`, insetad of defining a new funciton as a mentioned above, we actually see in the code block above for `deleteTodo`, I have commented out `setTodos(todos.filter((todo) => todo.todo_id !== todoObj.todo_id));`, since I tried it this way as well, and this is would be the equivalent line for passing the states in and doing it in the function, this worked perfectly, but I liked the other way better, there is certainly merit to just doing it liek this sicne then we dont have to go look back at the other component to figure out what `filterTodos` does
+
+### Building the Edit Button
+
+- 

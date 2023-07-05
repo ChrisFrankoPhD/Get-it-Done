@@ -51,6 +51,7 @@ app.get("/todos/:id", async(req, res) => {
             "SELECT * FROM todo WHERE todo_id=$1 LIMIT 1",
             [id]
         );
+        console.log(`TODO DELETED`);
         res.json(todo.rows[0])
     } catch (err) {
         console.error(err.message);
