@@ -973,4 +973,150 @@ const filterTodos = (todoId) => {
 
 ### Building the Edit Button
 
-- 
+- **note, the below goes through my implementation without watching the video, I think this is objectively worse in one way, since we have alot of the functionality of the EditTodo component in the parent ListItem component, but I think we can encapsulate everything in the actual EditTodo component with some things learned in the video instead**
+- we will have the edit button as a seperate component in its own file, `EditTodo.js`, however the functionality for `EditTodo` is in the `ListTodo` component, since the edit button is part of the child `ListItem` component that we construct for each todo
+- we start by making a click handler for the edit button in the `ListItem`:
+```
+<div className="d-flex flex-column ms-auto">
+    <button className="btn btn-secondary flex-grow-1" onClick={() => editModal(todoObj)}>Edit</button>
+    <button className="btn btn-danger flex-grow-1" onClick={() => deleteTodo(todoObj, filterTodos)}>Delete</button>
+</div>
+```
+- so we see that when this button is clicked we call the `editModal(todoObj)` function and we pass it the todo object we are working on in this `ListItem`
+- we see the in the function itself, we construct the component on click, so that way we are not making all of these EditTodo compoennts immediately on page load, only as we need them:
+```
+const ListItem = ({todoObj, filterTodos}) => {
+    console.log("ListItem");
+    console.log(todoObj);
+
+    const [editTodo, setEditTodo] = useState('')
+
+    const editModal = async (todoObj) => {
+        console.log("editModal:");
+        console.log(todoObj);
+
+        await setEditTodo(<EditTodo todoObj={todoObj} key={todoObj.todo_id} />)
+        const modal = document.getElementById(`modal-${todoObj.todo_id}`)
+
+        modal.showModal()
+        document.querySelector('body').classList.add('modal-open')
+
+        document.querySelector(`#modal-${todoObj.todo_id} .close`).addEventListener('click', () => {
+            modal.close()
+            document.querySelector('body').classList.remove('modal-open')
+        })
+
+        document.querySelector(`body`).addEventListener('click', (e) => {
+            console.log(e.target)
+            console.log(document.getElementById(`modal-${todoObj.todo_id}`))
+            if(e.target === document.getElementById(`modal-${todoObj.todo_id}`)) {
+                console.log('clicked off modal')
+                modal.close()
+                document.querySelector('body').classList.remove('modal-open')
+            }
+        })
+
+    }
+```
+- we also see that we added a new state to the `ListItem` component, one that will keep track of the modal itself, so we build the `EditTodo` component within this state, and that way we can apply the state as a variable to the HTML returned by `ListItem` later
+- we see here we call for the construction of the `EditTodo` component int eh `setEditTodo` function, this constructs the component as:
+```
+const EditTodo = ({todoObj}) => {
+    const [description, setDescription] = useState(todoObj.description)
+
+    console.log("building EDITTODO");
+    console.log(todoObj);
+
+    const editDescription = (e) => {
+        setDescription(e.target.value)
+    }
+
+    ...
+    ...
+
+    const modalID = `modal-${todoObj.todo_id}`
+    console.log(modalID);
+
+    return (
+        <dialog id={modalID} className="w-50" onClick={() => setDescription(todoObj.description)}>
+            <form className="d-flex border p-0" onSubmit={(e) => onEdit(todoObj, e)}>
+                <div className="list-num border-end p-2 text-center d-flex justify-content-center align-content-center flex-wrap">
+                    <h3 className="m-0">{todoObj.todo_id}</h3>
+                </div>
+                <div className="list-det lead d-flex flex-column justify-content-center py-2 px-3 w-100">
+                    <input className="form-control border-0" name="editTodo" value={description} onChange={editDescription} /> 
+                </div>
+                <div className="d-flex flex-column ms-auto">
+                        <button className="btn btn-success flex-grow-1" >Save</button>
+                        <button type="button" className="close py-1 px-2 align-self-end" onClick={() => setDescription(todoObj.description)}>Close</button>
+                </div>
+            </form>
+        </dialog>
+    )
+} 
+```
+- so here we are showing the EditTodo compoent, we need to set a new state for the description of the todo item itself, since if we want to edit it we will need to have an input field that can update the description with an onchnage handler, just like we did for the InputTodo component earlier
+- there is alot of HTML returned for styling, but the main points are that we have a form with an input field, and an edit button to submit the description, and a close button to just close it
+- we see in the input field we call the onchange handler that will simply update the description state, just liek we had in the inputTodo component, 
+- when we submit the form, we see that we call the `onSubmit={(e) => onEdit(todoObj, e)}` function, here since we need to pass in the event `e` from the click, and also the `todoObj`, we use the arrow function notation where the event is passed to function on the click
+- the function itslef is defined in the `EditTodo` component as well and is shown below:
+```
+const onEdit = async (todoObj, e) => {
+    e.preventDefault();
+    try {
+        const body = { description };
+        // console.log(body);
+        // console.log(JSON.stringify(body));
+        const response = await fetch(`/todos/${todoObj.todo_id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        console.log(data);
+        window.location = '/'
+    } catch (err) {
+        console.error(err.message);
+    }
+}
+```
+- the firsst thing we need to do as usual for form submission is `e.preventDefault();` to stop the page from refreshing immediately
+- then we use a try/catch to the body of the JSON request we are going to make to the current `description`, which will be whatever is currently in the edit input field
+- we then make a PUT API request, this time again specifying the ID of the todo that we want to edit with the `/todos/${todoObj.todo_id}` route, and also adding options to the request to specify PUT, our content-type, and the body of the request (the new description), just like we did when we make a POST request in `InputTodo`
+- from there we just refresh the page with `window.location = '/'`, and we see our todo has successfulyl been edited
+- back in the `ListItem` component, specifically the `editModal` function, we also added a significant amount of stylign to make sure our Modal has the functionality we want:
+```
+const editModal = async (todoObj) => {
+
+        await setEditTodo(<EditTodo todoObj={todoObj} key={todoObj.todo_id} />)
+        const modal = document.getElementById(`modal-${todoObj.todo_id}`)
+
+        modal.showModal()
+        document.querySelector('body').classList.add('modal-open')
+
+        document.querySelector(`#modal-${todoObj.todo_id} .close`).addEventListener('click', () => {
+            modal.close()
+            document.querySelector('body').classList.remove('modal-open')
+        })
+
+        document.querySelector(`body`).addEventListener('click', (e) => {
+            // console.log(e.target)
+            // console.log(document.getElementById(`modal-${todoObj.todo_id}`))
+            if(e.target === document.getElementById(`modal-${todoObj.todo_id}`)) {
+                console.log('clicked off modal')
+                modal.close()
+                document.querySelector('body').classList.remove('modal-open')
+            }
+        })
+    }
+```
+- we already covered the construction of the `EditTodo` with `setEditTodo`, but we are actually able to view the edit window as a modal by the `modal.showModal()` method, which is a built in method that brings up a standard dialog element
+- it knows which dialog element to bring up because we just previously set `modal` to be the newly constructed `EditTodo` component with `const modal = document.getElementById('modal-${todoObj.todo_id}')`
+- we then add a CSS class tot eh body element called `'modal-open'`, which ust adds the `overflow: hidden;` property to the bod so scrolling is disabled
+- we also add an event listener to the close button of the modal element that calls `modal.close()`, which is the built in method for stopping the display of the modal, we also remove the `modal-open` class from the body so that scrolling enabled again,
+- lastly to add the fucntionality of being able to close the modal by clicking off of the body, we add an event listener to the body that checks the element that was clicked on, and if the element being clicked is the modal element, then we also call `modal.close()`
+    - this works since the backdrop when the modal is open is the base modal element, the `<dialog>` element in our EditTodo HTML markup, if we click on the actual edit dialog box of the model, the reutnred element is the more specific `<div>` or `<input>` or whatever element we clicked on, only the empty backdrop still returns the blank `<dialog id='modal-${todoObj.todo_id}'>` 
+- lastly, we want to make sure that is we edit the description with the edit dialog box open, we also want it to be reset to the original todo description when we close it, and we can do this by adding `onClick={() => setDescription(todoObj.description)}` to both the parent `<dialog>` element, and the close `<button>` element
+

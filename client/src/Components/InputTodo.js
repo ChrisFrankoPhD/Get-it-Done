@@ -14,8 +14,8 @@ const InputTodo = () => {
         e.preventDefault();
         try {
             const body = { description };
-            console.log(body);
-            console.log(JSON.stringify(body));
+            // console.log(body);
+            // console.log(JSON.stringify(body));
             const response = await fetch("/todos", {
                 method: "POST",
                 headers: {
@@ -23,8 +23,9 @@ const InputTodo = () => {
                 },
                 body: JSON.stringify(body)
             });
-            const data = await response.json();
-            console.log(data);
+            // const data = await response.json();
+            // console.log(data);
+            window.location = '/'
         } catch (err) {
             console.error(err.message);
         }
