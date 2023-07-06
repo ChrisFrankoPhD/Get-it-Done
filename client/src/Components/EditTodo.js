@@ -34,7 +34,7 @@ const EditModal = ({ todoObj }) => {
         },
         body: JSON.stringify(body),
       });
-      const data = await response.json();
+    //   const data = await response.json();
     //   console.log(data);
       window.location = "/";
     } catch (err) {
