@@ -5,8 +5,6 @@ const ListItem = ({todoObj, filterTodos}) => {
     console.log("ListItem");
     console.log(todoObj);
 
-    const [editTodo, setEditTodo] = useState('')
-
     const deleteTodo = async (todoObj, filterTodos) => {
         try {
             const response = await fetch(`/todos/${todoObj.todo_id}`, {
@@ -26,33 +24,6 @@ const ListItem = ({todoObj, filterTodos}) => {
         }
     }
 
-    const editModal = async (todoObj) => {
-        console.log("editModal:");
-        console.log(todoObj);
-
-        await setEditTodo(<EditTodo todoObj={todoObj} key={todoObj.todo_id} />)
-        const modal = document.getElementById(`modal-${todoObj.todo_id}`)
-
-        modal.showModal()
-        document.querySelector('body').classList.add('modal-open')
-
-        document.querySelector(`#modal-${todoObj.todo_id} .close`).addEventListener('click', () => {
-            modal.close()
-            document.querySelector('body').classList.remove('modal-open')
-        })
-
-        document.querySelector(`body`).addEventListener('click', (e) => {
-            console.log(e.target)
-            console.log(document.getElementById(`modal-${todoObj.todo_id}`))
-            if(e.target === document.getElementById(`modal-${todoObj.todo_id}`)) {
-                console.log('clicked off modal')
-                modal.close()
-                document.querySelector('body').classList.remove('modal-open')
-            }
-        })
-
-    }
-
     return (
         <div className="d-flex border p-0">
             <div className="list-num border-end p-2 text-center d-flex justify-content-center align-content-center flex-wrap">
@@ -62,10 +33,9 @@ const ListItem = ({todoObj, filterTodos}) => {
                 <p className="m-0">{todoObj.description}</p> 
             </div>
             <div className="d-flex flex-column ms-auto">
-                <button className="btn btn-secondary flex-grow-1" onClick={() => editModal(todoObj)}>Edit</button>
+                <EditTodo todoObj={todoObj} key={todoObj.todo_id} />
                 <button className="btn btn-danger flex-grow-1" onClick={() => deleteTodo(todoObj, filterTodos)}>Delete</button>
             </div>
-            {editTodo}
         </div>
     )
 }
@@ -99,13 +69,14 @@ const ListTodo = () => {
 
     useEffect(() => {
         getTodos();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     
     const todoHTML = todos.map((todoObj, idx) => {
         return (
             <ListItem todoObj={todoObj} key={idx} filterTodos={filterTodos} todos={todos} setTodos={setTodos}/>
         )
-    })
+    }) 
 
     return (
         <main className="container w-50 mt-4">
