@@ -1120,3 +1120,165 @@ const editModal = async (todoObj) => {
     - this works since the backdrop when the modal is open is the base modal element, the `<dialog>` element in our EditTodo HTML markup, if we click on the actual edit dialog box of the model, the reutnred element is the more specific `<div>` or `<input>` or whatever element we clicked on, only the empty backdrop still returns the blank `<dialog id='modal-${todoObj.todo_id}'>` 
 - lastly, we want to make sure that is we edit the description with the edit dialog box open, we also want it to be reset to the original todo description when we close it, and we can do this by adding `onClick={() => setDescription(todoObj.description)}` to both the parent `<dialog>` element, and the close `<button>` element
 
+#### REFACTOR: Changing EditTodo To Encapsulate All Modal Functionality
+
+- **so we fully built a working EditTodo component in the previous section, but now I want to chnage it up a but to be a bit cleaner in my opionion in a couple of ways**
+- in the original implementation, we had an edit `<button>` element in the `ListItem` component, and when we clicked that button it would call a function, also in `ListItem` that would initialize the `EditTodo` component, and also add a bunch of event listeners to the component as well, but the actual HTML for the `EditTodo`, including the modal and everything, was in the seperated `EditTodo` comoonent, so we were splitting the HTML and alot of the functionality of the modal/component bewteen files/components, which I do not like
+- the reason we did this was so that we would only render the modal after click, in the video, the whole modal HTML is rendered for each `ListItem` and only shown on button click, I dont like this long term since if we had like 100 list items, we render A TON of HTML for no reason if only a few of them ever get clicked on
+- so in the video, he had the edit `<button>` element replaced with the actualy `<EditTodo />` component, and all the HTML was rendered right there, so the upside is everything for the `EditTodo` component is localized in the component itself
+- I want to make the best of both world, and at first could not figure out how, then I slept on it, came back, and now we ballin baby
+- okay so first, I used his strategy of just placing the `<EditTodo />` component within the `ListItem` HTML where we want the Edit `<button>` element to be, so now `ListItem` looks like:
+```
+const ListItem = ({todoObj, filterTodos}) => {
+
+    const deleteTodo = async (todoObj, filterTodos) => {
+        try {
+            const response = await fetch(`/todos/${todoObj.todo_id}`, {
+                method: "DELETE",
+            })
+            const data = await response.json()
+            filterTodos(todoObj.todo_id);
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+
+    return (
+        <div className="d-flex border p-0">
+            <div className="list-num border-end p-2 text-center d-flex justify-content-center align-content-center flex-wrap">
+                <h3 className="m-0">{todoObj.todo_id}</h3>
+            </div>
+            <div className="list-det lead d-flex flex-column justify-content-center p-2 ">
+                <p className="m-0">{todoObj.description}</p> 
+            </div>
+            <div className="d-flex flex-column ms-auto">
+                <EditTodo todoObj={todoObj} key={todoObj.todo_id} />
+                <button className="btn btn-danger flex-grow-1" onClick={() => deleteTodo(todoObj, filterTodos)}>Delete</button>
+            </div>
+        </div>
+    )
+}
+```
+- so now our parent `ListItem` is very clean and only has the `deleteTodo` click handler
+- inside `EditTodo`, we now return the Edit `<button>` element, and have abstracted the modal that is made upon click into its own component, and we have an `{editModal}` placeholder that gets filled when the button is clicked
+- so this functionality is very similar to how I had it before, bute now it is all inside `EditTodo`:
+```
+const EditTodo = ({ todoObj }) => {
+  const [editModal, setEditModal] = useState("");
+
+  const renderEditModal = async (todoObj) => {
+    const key = `modal-${todoObj.todo_id}`;
+
+    await setEditModal(<EditModal todoObj={todoObj} key={key} />);
+    const modal = document.getElementById(`modal-${todoObj.todo_id}`);
+
+    modal.showModal();
+    document.querySelector("body").classList.add("modal-open");
+
+    document.querySelector(`#modal-${todoObj.todo_id} .close`).addEventListener("click", () => {
+        modal.close();
+        document.querySelector("body").classList.remove("modal-open");
+      });
+
+    document.querySelector(`body`).addEventListener("click", (e) => {
+      console.log(e.target);
+      console.log(document.getElementById(`modal-${todoObj.todo_id}`));
+      if (e.target === document.getElementById(`modal-${todoObj.todo_id}`)) {
+        console.log("clicked off modal");
+        modal.close();
+        document.querySelector("body").classList.remove("modal-open");
+      }
+    });
+  };
+
+  return (
+    <>
+      <button className="btn btn-secondary flex-grow-1" onClick={() => renderEditModal(todoObj)}>Edit</button>
+      {editModal}
+    </>
+  );
+};
+```
+- so we moved the `[editModal, setEditModal] = useState("");` state into `EditTodo`, and we also now have all of the functionality for the modal, with the click handlers and the opening and closing calls, in `EditTodo` itself in the `renderEditModal` function
+- previously I could not do this since hte modal was built in `EditTodo`, so we could not be referencing and controlling the modal opening and closing within the modal itself, it has to be a layer outside, but we fix this here by having `EditTodo` just building the button, and abstrcting the Modal to its own child component in the same file called `EditModal`
+- we see that `EditTodo` now calls for the construction of `EditModal` when the Edit `<button>` is clicked through the `renderEditModal` function in the `await setEditModal(<EditModal todoObj={todoObj} key={key} />)` line
+- we then add the opening and closing functionality as we normally did
+- inside the `EditModal` component, (which is in the same file since it is only used here):
+```
+const EditModal = ({ todoObj }) => {
+  const [description, setDescription] = useState(todoObj.description);
+
+  const editDescription = (e) => {
+    setDescription(e.target.value);
+  };
+
+  const resetDescription = (e) => {
+    if (e.target === document.getElementById(`modal-${todoObj.todo_id}`)) {
+      setDescription(todoObj.description);
+    }
+  };
+
+  const onEdit = async (todoObj, e) => {
+    e.preventDefault();
+    try {
+      const body = { description };
+      const response = await fetch(`/todos/${todoObj.todo_id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await response.json();
+      window.location = "/";
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const modalID = `modal-${todoObj.todo_id}`;
+  console.log(modalID);
+  return (
+    <dialog id={modalID} className="w-50" onClick={(e) => resetDescription(e)}>
+      <form className="d-flex border p-0" onSubmit={(e) => onEdit(todoObj, e)}>
+        <div className="list-num border-end p-2 text-center d-flex justify-content-center align-content-center flex-wrap">
+          <h3 className="m-0">{todoObj.todo_id}</h3>
+        </div>
+        <div className="list-det lead d-flex flex-column justify-content-center py-2 px-3 w-100">
+          <input
+            className="form-control border-0"
+            name="editTodo"
+            value={description}
+            onChange={editDescription}
+          />
+        </div>
+        <div className="d-flex flex-column ms-auto">
+          <button className="btn btn-success flex-grow-1">Save</button>
+          <button
+            type="button"
+            className="close py-1 px-2 align-self-end"
+            onClick={() => setDescription(todoObj.description)}>
+            Close
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+};
+```
+- here is where most of the work is actually done, we can see in the return statement we build all of the large HTML for the modal, which has not changed for the most part
+- we still ahve the `description` state that is initially set to the listObj description, and lets the user update the state as we type into the input field
+- we also have the `onEdit` function for when the form is submitted that deals with the PUT request to edit the data in our database, nothing has changed there
+- the only difference now is that we had to alter the functionality for the reseting of `description` back to `listObj.description` when the edit modal is closed, for some reason when we put all of this into its own component, the `onClick` handler for the input field that we had previously: `onClick={() => setDescription(todoObj.description)}` would now get called when we hit the `Save` button, thus our description would get set back to the initial description immediately before the `onEdit` function was called for the PUT request, so we were never actually able to edit anything in the database
+    - the original functionality for that is to reset the description when we click off the modal, since clicking off he modal returns the `<dialog>` element for the event target, while clicking on the modal itself returns the more specifc element, in this case the save `<button>`, and through testing we see it was still returning the more specific save `<button>`, but was still running the onClick reset for soem reason
+- Now this makes some sense since the "Save" button is part of the parent `<input>` element, so it was calling that onClick handler when we clicked on "Save", but this was not how it worked before abstracting this, so who knows
+- we fix thsi easily enough by changing the onClick handler to call a new function `onClick={(e) => resetDescription(e)}`, where we simply use the same condition we use for the modal closing functionality, `if (e.target === document.getElementById(`modal-${todoObj.todo_id}`))` before resettign the description:
+```
+const resetDescription = (e) => {
+    if (e.target === document.getElementById(`modal-${todoObj.todo_id}`)) {
+      setDescription(todoObj.description);
+    }
+  };
+```
+- so now it only resets if we are clicking off the modal to close it, and if we click on the Save `<button>`, we see the button element gets returns for `e.target` instead, as mentioned above, so the description does not reset and we are gucci
+- so in total, this now gives a fully abstracted `EditTodo` element, and we do not have to worry about editing functionalit leaking into the `ListTodo` element
