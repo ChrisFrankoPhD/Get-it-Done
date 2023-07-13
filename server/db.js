@@ -4,7 +4,7 @@ const pool = new Pool({
     user: "postgres",
     password: "oishi69fohpo",
     port: 5432,
-    database: "fluetodo"
+    database: "todoapp"
 });
 
 const query = (text, params, callback) => {
