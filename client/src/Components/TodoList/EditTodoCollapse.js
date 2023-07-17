@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const EditModal = ({ todoObj }) => {
+const EditModal = ({ todoObj, setTodosChange }) => {
   const [description, setDescription] = useState(todoObj.description);
 
 //   console.log("building EditModal");
@@ -21,22 +21,21 @@ const EditModal = ({ todoObj }) => {
 
   const onEdit = async (todoObj, e) => {
     // console.log("onEdit");
-    // console.log(description);
     e.preventDefault();
     try {
       const body = { description };
-      // console.log(body);
-      // console.log(JSON.stringify(body));
-      const response = await fetch(`/todos/${todoObj.todo_id}`, {
+      const myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("token", localStorage.token);
+
+      const response = await fetch(`dashboard/todos/${todoObj.todo_id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: myHeaders,
         body: JSON.stringify(body),
       });
     //   const data = await response.json();
     //   console.log(data);
-      window.location = "/";
+      setTodosChange(true)
     } catch (err) {
       console.error(err.message);
     }
@@ -72,7 +71,9 @@ const EditModal = ({ todoObj }) => {
   );
 };
 
-const EditTodo = ({ todoObj }) => {
+
+
+const EditTodo = ({ todoObj, setTodosChange }) => {
   const [editModal, setEditModal] = useState("");
 
 //   console.log("building EditTodo Button");
@@ -83,7 +84,7 @@ const EditTodo = ({ todoObj }) => {
     // console.log(todoObj);
 
     const key = `modal-${todoObj.todo_id}`;
-    await setEditModal(<EditModal todoObj={todoObj} key={key} />);
+    await setEditModal(<EditModal todoObj={todoObj} key={key} setTodosChange={setTodosChange} />);
     const modal = document.getElementById(`modal-${todoObj.todo_id}`);
 
     modal.showModal();
@@ -107,7 +108,7 @@ const EditTodo = ({ todoObj }) => {
 
   return (
     <>
-      <button className="btn btn-secondary flex-grow-1" onClick={() => renderEditModal(todoObj)}>Edit</button>
+      <button className="edit-butt fs-6 fw-semibold mt-1 px-2" onClick={() => renderEditModal(todoObj)}>Edit</button>
       {editModal}
     </>
   );

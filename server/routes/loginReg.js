@@ -19,7 +19,7 @@ router.post("/register", validInfo, async (req, res) => {
         );
 
         if (user.rows.length !== 0) {
-            return res.status(401).send("User Already Exists")
+            return res.status(401).json("User Already Exists")
         };
 
         // 3. Bcrypt the user password
@@ -40,7 +40,7 @@ router.post("/register", validInfo, async (req, res) => {
 
     } catch (error) {
         console.error(error.message);
-        res.status(500).send("Server Error")
+        res.status(500).json("Server Error")
     }
 })
 
@@ -69,10 +69,10 @@ router.post("/login", validInfo, async (req, res) => {
         // 4. Give them a JWT Token
         const token = jwtGenerator(user.rows[0].user_id)
 
-        res.json(token)
+        res.json({token})
     } catch (error) {
         console.error(error.message);
-        res.status(500).send("Server Error")
+        res.status(500).json("Server Error")
     }
 })
 
@@ -82,7 +82,7 @@ router.get("/verify", authorization, async (req, res) => {
         res.json(true);
     } catch (error) {
         console.error(error.message);
-        res.status(500).send("Server Error")
+        res.status(500).json("Server Error")
     }
 })
 

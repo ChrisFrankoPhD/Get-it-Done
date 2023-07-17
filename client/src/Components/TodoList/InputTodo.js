@@ -1,6 +1,6 @@
 import {useState} from "react";
 
-const InputTodo = () => {
+const InputTodo = ({ setTodosChange }) => {
     const [description, setDescription] = useState("");
 
     const updateDescription = (e) => {
@@ -13,19 +13,22 @@ const InputTodo = () => {
         console.log(description);
         e.preventDefault();
         try {
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+            myHeaders.append("token", localStorage.token);
             const body = { description };
             // console.log(body);
             // console.log(JSON.stringify(body));
-            const response = await fetch("/todos", {
+            const response = await fetch("/dashboard/todos", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: myHeaders,
                 body: JSON.stringify(body)
             });
-            // const data = await response.json();
-            // console.log(data);
-            window.location = '/'
+            const data = await response.json();
+            console.log(data);
+            setTodosChange(true)
+            setDescription("")
+            // window.location = '/'
         } catch (err) {
             console.error(err.message);
         }
@@ -33,10 +36,9 @@ const InputTodo = () => {
 
     return (
         <div className="container">
-            <div className="row text-center mt-5">
-                <h1>Input Todo</h1>
+            <div className="row text-center">
                 <form className="w-100 mt-3 d-flex justify-content-center" onSubmit={onSubmitForm} >
-                    <div className="w-50 d-flex justify-content-center border border-1 border-secondary-subtle bor">
+                    <div className="w-50 d-flex justify-content-center border border-1 border-secondary-subtle">
                         <input className=" form-control border-0" name="inputTodo" placeholder="What do you need ToDo?" value={description} onChange={updateDescription} />
                         <button className="btn btn-primary" >Add</button>
                     </div>

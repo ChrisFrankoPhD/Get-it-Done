@@ -669,7 +669,7 @@ return (
 - so there is some styling that we can ignore, but we have a form component, and within that we have a input and button component
 - first we want to deal with being able to use the input the user puts into the form input, so we create a state by using the `useState()` react hook that we call descirption, since that is the name of the column for the ToDo list items in our database, and set the form value to be equal to that state
     - this may seem confusing at first, since the user types into the form to decide the form value, but here we are setting the form value to the react state, but what we are really doing is making that react is the one true god here, we also have an `onChange` attribute set here that calls the `updateDescription` handler everytime the value of the input changes, and we see that the handler just updates the react state to be equal to the value of the form
-    - so what is happening is that with every keystroke, the react state is updated by `updateDescription`, which updates the `description` state to the whatever the user typed, and thus the `value` field of the input now displays what the user typed, so we are working slightly backwards by making the user *really* update the react state, and the form just displaying the react state, but this allows the react state to be the true source of the data, and thus we can pass that state around to other functions if we need it
+    - so what is happening is that with every keystroke, the react state is updated by `updateDescription`, which updates the `description` state to the whatever the user typed, and thus the `value` field of the input now displays what the user typed, so we are working slightly backwards by making the user *really* update the react state, and the form just displaying the react state, but this allows the react state to be the true source of truth of the data, and thus we can pass that state around to other functions if we need it
 - so now that we have a way to make the user update the state that we want to eventually send to our server to add to the database, we need to have a way for the user to actually submit the form to trigger that data sending
 - we do this on the parent form element and not the button element, since it is the form that is actually going to get submitted in the HTML code, we see that on the form element we have the `onSubmit={onSubmitForm}` property, which will call another handler function that we need to define called `onSubmitForm` when the form is submitted, so when the button is clicked
 - we can add this function to the component:
@@ -2462,7 +2462,820 @@ router.get("/todos/search/:search", authorization, async(req, res) => {
 ```
 - so now we have a complex query with a WHERE clause of `WHERE (user_id=$1 AND (description LIKE ('%' || $2 || '%')))`, so we need the description LIKE to match, and the `user_id` to match for it to be reutrned, and testing postman confirm it works awww yeah
 
-# Client Side
+# Client Side JWT Addition
 
 - with the above finished we see we have a fully functional backend, we just need to make a front end that con construct these requests for us properly, and format the data how we like
 - I am probably going to make this very not aesthetic, and just try to get the functionality down first, then we can fuck with some colour
+- so in general we are going to be storing an authenticated or not authenticated state in the parent App.js folder, and when they try to load the login component for example, if we find the user is already authenticated, we are going to just redirect them to the dahsboard, where the todo list will live, and if they are not authenticated, then we load the login page so they can get authenticated
+- we are not going to go over state management system like React Context API, or Redux, since these deserve more time and we want to focus on JWT, 
+    - however I want to get into these later
+
+## SetUp
+
+- so we have the basis of our react app set up already, we have our react installation, and all of our componenrs we made for our todo list, and our current panding page in App.js is our ListTodo and InputTodos components
+- **however** we are going to install `react-router-dom` and `react-toastify`, 
+    - the former lets us create routes different routes on our page, so when we navigate to "http://localhost:3000/about" for example, we bring up a specific view with component for the about page (we are not making an about page, so this is jsut an example), 
+    - the latter lets us have little pop up notifications for when we log in or register or soemthing to let the user know we logged in
+
+## React-Router-Dom
+
+- we have used react-router-dom in the movie search project before, but we will go over how we are going to set it up here too
+- we set this up in the App.js file, so it will take a bit of modifying to get our current project to still work with the react-router-dom setup, we may just not load any of the todo list components yet until we start working on the dashboard component, since that is where we will actually serve the todo list
+- **OKAY WHEN WATCHING THE TUTORIAL I CAME ACROSS OSME QUESTIONS AND DIFFERENCES FROM MY OTHER IMPLEMENTATION OF RRD (REACT ROUTER DOM) IN THE MOVIE SITE, WILL TALK ABOUT THEM HERE**
+- **also will add more as i find more things that are different**
+    1. we need to import BrowserRouter from RRD, all components that will use RRD need to be excapsulated in a parent Browser Router component, to do this we just wrap the whole ass app in `<BrowserRouter><BrowserRouter />`, but he does it in the video in the App component, just making a parent BrowserRouter component for all the views/components: 
+        ```
+        function App() {
+            return (
+                <BrowserRouter>
+                    <Route />
+                    <Route />
+                <BrowserRouter />
+            )
+        }
+        ```
+        - but in my experience we instead go into index.js and wrap the App component in browser router:
+        ```
+        root.render(
+            <React.StrictMode>
+                <BrowserRouter>
+                    <App />
+                </BrowserRouter>
+            </React.StrictMode>
+        );
+        ```
+        - then in app have our routes and whatnot, so why the difference?
+        - from what I can tell, not a lot of reason, people seem to do both, and it seems as though as long as all your components and routes tat are going to rely on BR are inside the component one way or another, we are gucci
+    2. Also, he is using the `<Switch>` component to hold all of his `<Route>` comonents in App, but my movie search app thing uses the `<Routes>` component to hold my `<Route>` components, and this is because he is using v5 of RRD, and I use v6
+        - there are lots of changes where they say to use newer element types in v6, in the "upgrading" docs here: https://reactrouter.com/en/main/upgrading/v5
+        - for example he also passes in his components to `<Route>` via the `render` attribute, but we will use the `element` attribute instead since we can directly define a component element (like `<ListTodo>`) in the `element` attribute, which makes it easier to pass props to those components
+
+### Initial BrowserRouter
+
+- okay so after that aside we can finally set up the routing in our app
+- first we want to go into index.js and import the `BrowserRuuter` component from react-router-dom, to allow our app to use proper URL style routing:
+```
+import { BrowserRouter } from 'react-router-dom';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+);
+```
+- we simply wrap the whole `<App />` component in a `<BrowserRouter>` component, that way the entire App has access to teh states and hooks of BrowserRouter
+
+### Adding Routes in App
+
+- we then want to go into our App component and add teh various routes we want to have for our page
+- to do this first we are going to create files for the Login component, the Register component, and the dashboard component, I am going to keep Dashboard.js in its own folder (also called dashboard), have Login.js and Register.js in the main Components folder, and move EditTodo.js, ListTodo.js, and InputTodo.js to its own TodoList folder
+- we can add very basic functionality to the new Dashboard/Login/Register components, just so they return their compoent name:
+```
+// Register.js File //
+const Register = () => {
+    return (
+        <>
+            <h1>Register</h1>
+        </>
+    );
+};
+
+export default Register;
+```
+```
+// Login.js File //
+const Login = () => {
+    return (
+        <>
+            <h1>Login</h1>
+        </>
+    );
+};
+
+export default Login;
+```
+```
+// Dashboard.js File //
+const Dashboard = () => {
+    return (
+        <>
+            <h1>Dashboard</h1>
+        </>
+    );
+};
+
+export default Dashboard;
+``` 
+- back in App.js we also want to import the Routes, Route, and Navigate components from react-router-dom: `import { Routes, Route, Navigate, } from 'react-router-dom';`, and we will also import each of teh components we just made, as well as useState since we will use it for the authentication state
+- so with react-router-dom, all of our different website pages, which can consist of mulitple components or just be a single one, are going to be `<Route>` components, all enclosed in a single parent `<Routes>` component
+- we then define a path as an attribute in each `<Route>` component, and when the page naviagtes to that URL, that is the route/component that is rendered:
+```
+function App() {
+
+  return (
+    <>
+      <Routes>
+        <Route 
+          exact path="/login" 
+          element={
+              <Login />
+          } 
+        />
+        <Route exact path="/register" element={<Register />} />
+        <Route 
+          exact path="/" 
+          element={
+              <Dashboard />
+          }  
+        />
+      </Routes>
+    </>
+  );
+}
+```
+- the whack formatting for the login and dashboard elements will make sense later
+- but we see all `<Route>` components are enclosed in a `<Routes>` component, and then each of the individual `<Route>` components call one of the components we made with the `element` attribute, and each `<Route>` has a defined path in the `path` attribute
+    - so for example, is the user types in "https://localhost:3000/login" they will his that `<Route>` and be directed to the `<Login />` component
+
+### Adding Authentication State and Redirects
+
+- okay so with that we now want to add a simple way to track the state of te user authentication, which we can do easily with the `useState` hook we added
+- we can create a state called `isAuthenticated` and have it set to a default boolean value of false: `const [isAuthenticated, setIsAuthenticated] = useState(false);`
+- we then want to be able to pass this state into the components, so that the login component can change this state after logging in and being successfully authenticated with a JWT token, so to do that we are going to need to pass a setState function to the components
+- **and** we also want a way of making sure the user is not able to load the `<Dashboard />` component if they are not authenticated, as well as not being able to load the `<Login />` component if they are already logged in
+- we do this below:
+```
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const setAuth = (boolean) => {
+    setIsAuthenticated(boolean);
+  }
+
+  return (
+    <>
+      <Routes>
+        <Route 
+          exact path="/login" 
+          element={
+            !isAuthenticated ? (
+              <Login setAuth={setAuth} />
+            ) : (
+              <Navigate to="/" />
+            )
+          } 
+        />
+        <Route exact path="/register" element={<Register setAuth={setAuth}/>} />
+        <Route 
+          exact path="/" 
+          element={
+            isAuthenticated ? (
+              <Dashboard setAuth={setAuth} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }  
+          setAuth={setAuth}
+        />
+      </Routes>
+    </>
+  );
+}
+```
+- so now we have a state for `isAuthenticated`, and we have also create a `setAuth` function that basically just calls `setIsAuthenticated` for us, but this makes it easier for passing the set state functionality as a prop to the components
+- in the actual `<Routes>` themselves, we see the `element` attributes have chnages signifcantly, we use the: `condition ? (run if True) : (run if False)` syntax to redirect react-router-dom to a different route if we are or are not autheticated
+    - for example in the `<Login>` `<Route>`:
+    ```
+    element={
+        !isAuthenticated ? (
+            <Login setAuth={setAuth} />
+        ) : (
+            <Navigate to="/" />
+        )
+    }
+    ```
+    - so if we are not authenticated, the Login component loads as expected, but if we are authenticated, then we redirect the app to the "/" route instead, which we can see is the route with the `<Dashboard>` component
+    - and we do the opposite for the dashboard component
+- further, since we want each of the Login/Dashboard/Register components to be able to change the `isAuthenticated` state, we also pass in the defined `setAuth` function as a prop to each: `<Login setAuth={setAuth}`
+- now for the last step, we want to add a button to test the basic functionality of this to the Login and Dashboard components, that will just have an onClick handler to call `setAuth(true)` and `setAuth(false)` respectively:
+```
+const Login = ({ setAuth }) => {
+    return (
+        <>
+            <h1>Login</h1>
+            <button onClick={() => setAuth(true)} >Login</button>
+        </>
+    );
+};
+```
+```
+const Dashboard = ({ setAuth }) => {
+    return (
+        <>
+            <h1>Dashboard</h1>
+            <button onClick={() => setAuth(false)} >Logout</button>
+            <InputTodo />
+            <ListTodo />
+        </>
+    );
+};
+```
+- **note, i also added our old Input and ListTodo components to the dasboard to give it some life, they dont work since we changed our backend/db structure, but looks nice**
+- and we see now that now if we navigate to the dashboard through the URL by entering just "https://localhost:3000", since the dahsboard route is "/", then we immediately get redirected to "https://localhost:3000/login" since we are not authenticated
+- if we then click the login button, `isAuthenticated` gets set to `true` and we are immediately redirect to the dashboard at "https://localhost:3000", then we can click the logout button and `isAuthenticated` gets set to `false` again and we are immediately redirect to "https://localhost:3000/login" again
+
+## Register Component
+
+- so now that we can route to the different components, we want to build out the register component so it looks how we want and actually interacts with the backend and can get that JWT token
+
+### Register Input Form and State
+
+- okay so the first thing to do is to make a form that peopel will input their registration info in, which is easy enough, we have made forms for the InputTodo component already:
+```
+const Register = ({ setAuth }) => {
+    const [inputs, setInputs] = useState({
+        name: "",
+        email: "",
+        password: ""
+    });
+    const updateInputs = (e) => {
+        setInputs({...inputs, [e.target.name]: e.target.value});
+    };
+    return (
+        <>
+            <div className="container">
+                <div className="row text-center mt-5">
+                    <h1>Register</h1>
+                    <form onSubmit={onSubmitForm} className="w-100 mt-3 d-flex flex-column justify-content-center align-items-center">
+                        <input 
+                            value={inputs.name} 
+                            onChange={updateInputs}
+                            type="text" 
+                            name="name" 
+                            placeholder="Username"
+                            className="w-50 form-control d-flex justify-content-center border border-1 border-secondary-subtle mb-3" 
+                            />
+                        <input 
+                            value={inputs.email} 
+                            onChange={updateInputs} 
+                            className="w-50 form-control d-flex justify-content-center border border-1 border-secondary-subtle mb-3" 
+                            type="email" 
+                            name="email" 
+                            placeholder="Email Address" 
+                        />
+                        <input 
+                            value={inputs.password} 
+                            onChange={updateInputs} 
+                            type="password" 
+                            name="password" 
+                            placeholder="Password" 
+                            className="w-50 form-control d-flex justify-content-center border border-1 border-secondary-subtle mb-3"      
+                        />
+                        <button className="w-50 btn btn-success btn-block">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </>
+    );
+};
+```
+- so we have a bunch of bootstrap calsses and stuff but the basis of it is quite simple, it is just a `<form>` element with 3 `<input>` elements, one for name, email, and password, and finally a `<button>` for submitting the whole thing
+- we see that we have defined a state called `inputs` that we use to hold each of the `name`,`email`, and `password` states in an object, we are going to use the typical `onChange` method with react where we set each of the input `value` attributes to be `input.name` for example, then update the value by calling an `onChange` handler, in this case `updateInputs()`
+- we use the same event handler for all of the inputs, and this way every time an input changes all teh states are updated at the same time, and we can guarentee they are always in sync with what is on the screen
+- inside `updateInputs()`, we simply call the `setInputs` function, with: `setInputs({...inputs, [e.target.name]: e.target.value});`, which looks confusing at first, but the `...inputs` syntax is just called a "spread" operator
+
+    #### Long Aside on {[]} Notation
+
+    - what this does is just call on each item of a iterable, so we have compressed the iterable, witht he commas and stuff so they are still seperate items, into the `...inputs` reference
+    - so when we just call `{...inputs}` for example, we are just cloing the inputs object
+    - however in addtion, we are adding another item to the object with the second term `[e.target.name]: e.target.value`, which for the `name` input would be `['name']: value`, and when definign an object literal like this, this defines a new item, which will overwrite the previous item with the key of `name` already in the object from the `...inputs` cloning
+        - in general, the last one in line always wins, it just overwrites each time
+    - I am not sure why we have to define it in square paranthesis like an array, we see if we remove the paraenthesis we can not compile, and if we do something like `String(e.target.name)` to cast it into a string, then it still doesnt work
+    - **Further testing**, if we `console.log([e.target.name])` in the function, we get a printout of `["name"]`, so just the input name in an array in a string, but if we `console.log(e.target.name)` we get `name`, so no string at all
+    - then if we do `console.log({[e.target.name]: 'test'})`, we get a proper object printed out of `{name: 'test'}`, so the `name` key is not in a array or even represented as a string liek it is when we log `[e.target.name]` alone
+    - we also see if we `console.log({e.target.name: 'test'})` we get an error! this doesnt work either, so it seems in the object literal notation, we have to use the square brackets to identify that we are calling a variable or object properties 
+    - we can confirm this by setting a variabel in the function `const test1 = 'chris'`, then try `console.log({test1: 'test'})`, **and we see the printout is:** `{test1: 'test'}`, so it doesnt even recognize the variable, and if we do `console.log({[test1]: 'test'})`, **the printout is now:** `{chris: 'test'}` **WOW**
+    - so i guess this is just a pice of JS that went over my head, inside objects we have to use square brackets as an "escape" to reference variables for keys from outside
+    - this makes sense since arrays cannot be keys anyway since they are mutable, and mutable bjects cannot be keys
+    - **one last test**, we can try the same thing on the value side of the object, with the same `const test1 = 'chris'` definition, we can do `console.log({test: test1})` and we see the reference works and we printout `{test: 'chris'}`, and if we do `console.log({test: [test1]})`, this time we actually cast the reference into an array and get `{test: ['chris']}`
+    - good stuff
+- okay back to the real world
+
+### OnSubmit Form Handler and Fetch API
+
+- now we want to add an onSubmit handler to the form so that we can actually submit this info and call teh API, this is quite easy since we know exactly the information our backend wants to recieve:
+```
+const onSubmitForm = async (e) => {
+        e.preventDefault()
+        try {
+            const body = { ...inputs }
+            const response = await fetch("/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+            })
+            const data = await response.json()
+            // console.log(data);
+            localStorage.setItem("token", data.token)
+            setAuth(true)
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+```
+- so when the button is submitted, we create a copy of the current state of the inputs with and put it int he `body` reference with `const body = { ...inputs }`
+- i will say I think the guy in the video made this harder on himself, he instead declares further variables in the component scope, saying `const { name, email, password } = inputs`, and then sets them to body in the handler with `const body = { name, email, password }` which works fine and they get updated everytime the compoennt updates, which is when the state changes, so they are alwasy up to date, but we can simply just reference inputs directly here with the spread notation like I do above
+    - he also uses them in his inputs for the html, defining the input names as `name={email}`, where I do `name={inputs.email}`, I liek my direct approach, we will see if it comes back to get me
+- we then make a simple fetch POST request liek we did with the InputTodo compoennt before
+- we want to make it to the register route, and we know that first has to go to the "/auth" routh, which calls the "loginReg" middleware, so our route is "auth/register"
+- we also have to define our fetch options object since it is not a simpel GET, so we define the method as POST, and the headers `content-type` liek we did before, and we also of course have to define the body, by using `body: JSON.stringify(body)` to get the inputs we put into `body` in there as a proper JSON string
+- we know from our backend that the register route is going to make a new user in the database with this info, and then send us back a fresh JWT authenticaion token, so we have to convert that JSOn to accept taht token with `const data = await response.json()`
+- and now we have to actually interact with our browser, which os cool! We have to add this token to the local storage on our browser with `localStorage.setItem("token", data.token)`, this sets an object like item to our browsrs local storage of "token" : {actual JWT}"
+- lastly we call `setAuth(true)`, which we passed to the register as a component to change the state of `isAuthenticated` to true now taht we have a token!
+- in fact, we can now go into our browser, and inspect, and if this all worked, we can go to the "application" tab of the dev tools, go to the "storage" section on the left, and find the "local storage" tab, and if in there there is likely multiple options, our is the page name, "http://localhost:3000/" in my case, and we can click on it and see a table of all our local storage items, and the only one there for us is "token: eyJhbGciOi...", and it shows the whole token but I shortened it,
+- that is really cool, everything worked and now our browser has this token it can use to give back to our backend the next time we want to load the page
+- we will see that right now if we go to the "/login" URL , we do not get automatically redirected though since we haven't yet set up the page to not refresh and reset the `isAuthenticated` state to false everytime we reload the page, however we do still want to it call a verify API to test if our token is valid whenever we load a page
+
+## Login Component
+
+- okay so functionally the login route should be pretty similiar to the register route, we want to have an email/passwrod enter form, and a submit button, except we want to hit the login endpoint of the backend instead of register
+- we still are going to want to get a token and put it in local storage as well
+- i will add the entirety of login here below, since most of it was just copy and pasted, and copy what has changed from register:
+```
+import { useState } from "react";
+import { Link } from 'react-router-dom';
+
+const Login = ({ setAuth }) => {
+    const [inputs, setInputs] = useState({
+        email: "",
+        password: ""
+    });
+    const updateInputs = (e) => {
+        setInputs({...inputs, [e.target.name]: e.target.value});
+    };
+    const onSubmitForm = async (e) => {
+        e.preventDefault()
+        try {
+            const body = { ...inputs }
+            const response = await fetch("/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+            })
+            const data = await response.json()
+            console.log(data);
+            if (data.token) {
+                localStorage.setItem("token", data.token)
+                setAuth(true)
+            }
+            
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+    return (
+        <>
+            <div className="container">
+                <div className="row text-center mt-5">
+                    <h1>Login</h1>
+                    <form onSubmit={onSubmitForm} className="w-100 mt-3 d-flex flex-column justify-content-center align-items-center">
+                        <input value={inputs.email} onChange={updateInputs} className="w-50 form-control d-flex justify-content-center border border-1 border-secondary-subtle mb-3" type="email" name="email" placeholder="Email Address" />
+                        <input value={inputs.password} onChange={updateInputs} className="w-50 form-control d-flex justify-content-center border border-1 border-secondary-subtle mb-3" type="password" name="password" placeholder="Password" />
+                        <button className="w-50 btn btn-success btn-block mb-3">Submit</button>
+                    </form>
+                    <Link to="/register">Or Create a New Account</Link>
+                </div>
+            </div>
+        </>
+    );
+};
+
+export default Login;
+```
+- so the mojority of the return statement is exactly the same, excet we have gotten rid of the "name" input field, since we want to login with emails instead of name since emails are unique
+- we have the same state, and onCHnage handler for the remaining input fields, and since we are just calling the spread operator `...inputs` in the `updateInputs` and `onSubmitForm` handlers we do not need to change the variables to remove `name` at all
+- in the fetch request we have changed the route from "auth/register" to "auth/login" of course, and besides that we also added a check to see if we actually get a token back for now:
+```
+if (data.token) {
+    localStorage.setItem("token", data.token)
+    setAuth(true)
+}
+```
+- we did this because when I was testing if the login worked correctly, I noticed we got redirected to dashboard with the `setAuth(true)` line even when we entered the wrong password since `setAuth(true)` gets called either way, so I just added as simple cehck to make sure we actually get a token back, which only happens if login is successful, before add the localstorage and `setAuth(true)` to avoid that
+    - i imagine we will do a better version of making sure were logged in before redirecting when we have the components done, but this works for now
+- the last thing we have added is a link in the HTML to navigate to /register, so the user can click that if they do not have an account, and we also added one to navigate to /login in the register page
+- we do this with the `<Link>` component from react-router-dom, which we have to import, it is very simple and looks like: `<Link to="/register">Or Create a New Account</Link>`
+- this lets us have a simple button that links to a different `<Route>` that we defined in the App component, and it is nice since we do not have to refresh the page, it just changes to a new route
+
+## Staring Dashboard Component and Updating Old Components
+
+- okay so now we want to make the dashboard component, and this is where we will have to add some things from the original combined JWT/Todos video to make the Todo list all work here in one go, instead of making then remaking the compoennt
+- hopefully it goes smoothly, but I will focus on getting the routing/authorization stuff done right frist
+- **okay so i lied, we are going to build the barebones dashboard component, but we are also going to make modifications to the ListTodo/EditTodo/InptTodo/DeleteTodo components/functions, so that these all play nicely with our backend API and we can actually have a functioning website before we add in the extra functionality like no logout on refrsh**
+- we want our dashboard, our main page, to display the users name, as well as the todo list itself, so our HTML structure for the dashboard is going to look something like:
+```
+const Dashboard = ({ setAuth }) => {
+    const [name, setName] = useState("")
+    return (
+        <>
+            <main className="container mt-4 text-center mt-5">
+                <div className="row d-flex flex-column justify-content-center">
+                    <h1>{name}'s ToDo List</h1>
+                    <InputTodo />
+                    <ListTodo />
+                </div>
+            </main>
+            
+        </>
+    );
+};
+
+export default Dashboard;
+```
+- **note, we chnaged some of the bootstrap styling to make it look more uniform and liek a single component all together when its loaded**
+- and so we are going to have to make a fetch request to get the user info
+- however, since we already need to make a fetch reqest to get all the Todos of the user, it makes more sense for us to make a single fetch request in the Dashboard component to the "/dashboard/" route we made in the backend, since that endpoint will give us the users name, todo_id, and todo description, for each of teh user's Todos, and thus we can just extract the name from one of the Todos
+    - remembering the SQL query from the "/dashboard/" route:
+    ```
+    const user_data = await db.query(
+        "SELECT u.user_name, t.todo_id, t.description FROM users as u LEFT JOIN todos as t ON u.user_id = t.user_id WHERE u.user_id=$1",
+        [req.user.id]
+    )
+    ```
+- since we are getting all the Todo information here, it also makes more sense for us to just set all of the returned Todos as a state in our component, and pass that state to the `<ListTodo />` in the return HTML above
+- so to do this, we are going to need to implement a state for the `name` that Dashboard will use, and then a state for `allTodos` that will get passed to `<ListTodo />`, and we will also need to make a `useEffect()` function that will call the API to get this data when the dashboard is initially loaded:
+```
+import InputTodo from '../TodoList/InputTodo';
+import ListTodo from '../TodoList/ListTodo';
+import { useEffect, useState } from 'react';
+
+const Dashboard = ({ setAuth }) => {
+    const [name, setName] = useState("")
+    const [allTodos, setAllTodos] = useState([])
+
+    const getProfile = async () => {
+        try {
+            const response = await fetch("/dashboard", {
+                method: "GET",
+                headers: { token: localStorage.token }
+            });
+            const data = await response.json();
+
+            setName(data[0].user_name)
+            setAllTodos(data)
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+
+    useEffect(() => {
+        getProfile()
+    }, [])
+
+    return (
+        <>
+            <main className="container mt-4 text-center mt-5">
+                <div className="row d-flex flex-column justify-content-center">
+                    <h1>{name}'s ToDo List</h1>
+                    <InputTodo />
+                    <ListTodo allTodos={allTodos}/>
+                </div>
+            </main>
+            
+        </>
+    );
+};
+
+export default Dashboard;
+```
+- so now we have state t store the user's name in: `const [name, setName] = useState("")` and a state to store the Todos in: `const [allTodos, setAllTodos] = useState([])`
+- when the page is loaded, `useEffect()` is called, which calls the `getProfile()` async function, once again, we are having `useEffect()` call a seperate `getProfile()` function so that we can make `getProfile()` asynchronous, since we cannot easily make `useEffect()` async on its own
+- inside get profile, we make a GET request to the "/dashboard" route ( which is the same as "/dashboard/"), and even though it is just a GET, we have to include the options object so that we have a place to pass the `token` that was given to us by the backend when we first logged in
+- we do this by just adding a simple `headers: { token: localStorage.token }` property to the object, and we also specify the method as GET since we have to do that if we are going to give options
+- now we do not need to do anything special to access that token, remember how in the Login component we saved the token to the browsers local storage with `localStorage.setItem("token", data.token)`, well now we can just access it in the same way with `localStorage.token`, very easy considering we are working with soemthign we did not initialize ourselves!
+- we then simply just await the response, and parse teh JSON response, and we know from the backend that our response, if successful, we be an an array in the form of:
+```
+[
+    {
+        "user_name": "zelda2",
+        "todo_id": 5,
+        "description": "slay gannon"
+    },
+    {
+        "user_name": "zelda2",
+        "todo_id": 7,
+        "description": "buy a gallon of PCP"
+    },
+    {
+        "user_name": "zelda2",
+        "todo_id": 13,
+        "description": "im sorry chris that wasn't nice"
+    },
+    {
+        "user_name": "zelda2",
+        "todo_id": 4,
+        "description": "works?"
+    }
+]
+```
+- and this example is for the "zelda2" user I made when testing in postman when making the backend
+- but in general it is an array of the `{ user_name, todo_id, description }` objects we defined in the SQL query
+- so we can simply now set the state for the `name` state to the `user_name` with `setName(data[0].user_name)`, so we just choose the first todo in the aray and grab the name, and due to our authentication and well made query, each returned todo will always have the same `user_name`
+- **also importantly,** if the user has no todos, for a new user, we still get a single object returned since we are doing a `LEFT JOIN` operation, and that would look like:
+```
+{
+    "user_name": "zelda2",
+    "todo_id": null,
+    "description": null
+}
+``` 
+- so we can still set the name, and simply load no todos since there are none
+- however, we also want to set the `allTodos` state in the `useEffect()` function as well, and we do that with `setAllTodos(data)`, whcih is easy enough, and just gives the entire array shown above to the `allTodos` state
+- in the last steo for this component, we then want to pass taht state to the `<ListTodo />` so that it can render the Todos without making its own fetch request, and we do that in the HTML return with `<ListTodo allTodos={allTodos}/>`
+- this now means we have to edit ListTodo so that it can use this data without making its own request
+
+### Updating ListTodo
+
+- so originally the ListTodo component made its own fetch request on render, via `useEffect()` which called th async `getTodos` function, then inside the HTML return, we return a variable called `todoHTML`, which is its own arrow function that maps the fetched `todos` state onto the `<ListItem>` component
+- the ListItem component does not need to be changed at all, since we are still grabbing the `description` and `todo_id` from each todo object that gets passed to it in the `todos` state array, instead we jsut need to change how the populate and update the `todos` state, since we no longer want to do it with a fetch request, but instead with the passed in `allTodos` array from the Dashboard component
+- this could be as simple as changing `const todoHTML = todos.map((todoObj, idx) => {` to `const todoHTML = allTodos.map((todoObj, idx) => {`, and that works initially, but we need to have abetter way to keep track of the `allTodos` state within the ListTodo component, and rerender the componenet when `allTodos` cahnges, and this sounds perfect for `useffect()`
+- Note, I will exclude the `ListItem` component definition here since it does not change, although we will need to change the `deleteTodo` method later to add the JWT authentication:
+```
+const ListTodo = ({ allTodos }) => {
+    const [todos, setTodos] = useState([])
+
+    const filterTodos = (todoId) => {
+        // console.log("filterTodos initiated");
+        setTodos(todos.filter((todo) => {
+            if (todo.todo_id !== todoId) {
+                return true
+            } else {
+                return false
+            }
+        }));
+    };
+
+    useEffect(() => {
+        setTodos(allTodos);
+    }, [allTodos])
+    
+    const todoHTML = todos.map((todoObj, idx) => {
+        return (
+            <ListItem todoObj={todoObj} key={idx} filterTodos={filterTodos} todos={todos} setTodos={setTodos}/>
+        )
+    }) 
+
+    return (
+        <main className="container mt-4">
+            <div className="row d-flex flex-column justify-content-center">
+                {todoHTML}
+            </div>
+        </main>
+    )
+}
+
+export default ListTodo
+```
+- so as we can see we have erased the `getTodos()` function entirely, since we do not need to make a request anymore, and we can also see that the `filterTodos()` function actually has not changed whatsoever
+- so now all we have to do is accept the `allTodos` state from Dashboard by deconstructing the prop: `const ListTodo = ({ allTodos }) => {`, and now we set the `todos` state directly in `useEffect`:
+```
+useEffect(() => {
+    setTodos(allTodos);
+}, [allTodos])
+```
+- so here we set `todos` to be `allTodos`, but notice that we also set a dependency of `useEffect` to be `[allTodos]`, what this does is tell `useEffect` to rerender our component each time one of the items in the array changes, in this case our only item is `allTodos`
+- this is one of the great features of `useEffect`, and is also the reason we are typically apssing an empty array to it `[]`, since this tells `useEffect` it has no dependencies, and also stops `useEffect` from being called every single time a component is rerendered, which ends up in continuous fetch requests being made for some components when the empty array is not passed
+- so now, everytime Dashboard updates `allTodos`, like when we add in the proper InputTodo functionality, it will pass the new `allTodos` to ListTodo, and since `allTodos` cahnged, `useEffect` will run and update the `todos` state to the new `allTodos`, and our list will be rendered properly
+- so notice all of our todos are not in the `todos` state, so the mapping function for creating ListItem's works as expected: `todos.map((todoObj, idx) => {`
+
+### Updating InputTodo & Adding Soft Refresh
+
+- so I have decided to instead update all the components to work nicely with the new login functionality before adding the additional authentication features from the JWT tutorial 
+- I will also add teh "soft reset" functionality here, and by that I mean the ability to update the todo list when we add or edit a todo, without having to refresh the entire page, which is a much nicer user experience, we already have this with the delete todos option, so having it for the whole app will be nice
+- for teh InputTodo, we mainly need to change the fetch request so it works with our new backend, which needs JWT wuthentication
+```
+const InputTodo = ({ setTodosChange }) => {
+    const [description, setDescription] = useState("");
+
+    const updateDescription = (e) => {
+        setDescription(e.target.value);
+        // console.log(description);
+    }
+
+    const onSubmitForm = async (e) => {
+        e.preventDefault();
+        try {
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+            myHeaders.append("token", localStorage.token);
+            const body = { description };
+            const response = await fetch("/dashboard/todos", {
+                method: "POST",
+                headers: myHeaders,
+                body: JSON.stringify(body)
+            });
+            const data = await response.json();
+            setTodosChange(true)
+            setDescription("")
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+...
+```
+- so here we can see that we have chnaged the route from "todos" to "dashboard/todos" as we have to for all of our new todolist routes
+- but we also have added the `myHeaders` declaration for constructing the headers of our request, this is common practice in JS, and allows us to make a headers object as we go, then pass that Headers object to the fetch request as `headers: myHeaders`, and it deals with the formatting for us
+- we do tis by calling the built in Headers class, and its constructor: `const myHeaders = new Headers();`, this creates a new Headers object for us, then we add items to our Headers object as key/value pairs with teh `append` method, such as: `myHeaders.append("Content-Type", "application/json");` and `myHeaders.append("token", localStorage.token);`
+- so this lets us add teh content type header that we already had, and add the new JWT token as well
+- when reading up on the HEaders object, it also has a list of forbidden heads it will not let us add, since they can mess with the ones needed by the browser I believe, which is ncie so we dont accidentally break stuff
+- we are now ready to send the request and get the response, which we do as normal, now we can see that instead of calling `window.location = '/'` wich did a hard reset of teh page prevously, we instead have created, and passed into the InputTodo component, the state handler for a `todosChange` state, and we set that state to `true` with `setTodosChange(true)`
+- this is a new addition that we make in the Dashboard comonent to keep track of when any change happens to our todos, and it is a simple boolean state:   
+```
+// Dashboard.js File //
+const Dashboard = ({ setAuth }) => {
+    const [name, setName] = useState("");
+    const [allTodos, setAllTodos] = useState([]);
+    const [todosChange, setTodosChange] = useState(false)
+...
+...
+    useEffect(() => {
+        getProfile();
+        setTodosChange(false)
+    }, [todosChange])
+
+    return (
+        <>
+            <main className="container mt-4 text-center mt-5">
+                <div className="row d-flex flex-column justify-content-center">
+                    <h1>{name}'s ToDo List</h1>
+                    <InputTodo setTodosChange={setTodosChange} />
+                    <ListTodo allTodos={allTodos} setTodosChange={setTodosChange} />
+                </div>
+            </main>
+            
+        </>
+    );
+};
+```
+- so we see we create the new state at the top and set teh default of `todosChange` to `false`, then we pass the `setTodosChange` method to both the InputTodo and ListTodo components (we will go over ListTodo more later, for EditTodo)
+- lastly, we see that we have included `[todosChange]` as a dependency for `useEffect`, so this means that `useEffect` will run everytime `todosChange` is cahnged
+- so we can see the inital state is `false`, then when InputTodo adds a new Todo list item, it calls `setTodosChange(true)`, thus changing `todosChange` and causing `useEffect` to run, which calls `getProfile();` to get all the new Todo items, including the new one that was just added, thus updating the list, and lastly in `useEffect` we call `setTodosChange(false)` to reset the state so if another todo is added, or if another component calls `setTodosChange(true)`, the process happens again and the list is reloaded
+- so in this way we have a method of "soft refreshing" the todo list anytime we want by just using the `todosChange` state
+- **lastly**, if we notice in the `onSubmitForm()` code above, we also call `setDescription("")` at the end of the function, this is so after we add a todo, the input form goes back to being empty, and the text we just submitted doesnt stick around
+
+### Updating EditTodos
+
+- we can do similar updates tot he EditTodo component, which if we recall is added in as the button element in the ListItem component of ListTodo
+- the first change is to add the same soft refresh functionality for after we edit a todo so that the page doesnt have to fully reload for the chnages to show
+- we do this in a similar way, passing `setTodosChange` from Dashboard to Listtodo to EditTodo, and finally to EditModal, since the EditModal component is where the change is actually submitted and and the backend Edit API is called
+- this happens in the onEdit submit handler for the edit modal form, which is shown below:
+```
+const onEdit = async (todoObj, e) => {
+    e.preventDefault();
+    try {
+        const body = { description };
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("token", localStorage.token);
+
+        const response = await fetch(`dashboard/todos/${todoObj.todo_id}`, {
+            method: "PUT",
+            headers: myHeaders,
+            body: JSON.stringify(body),
+        });
+        setTodosChange(true)
+    } catch (err) {
+        console.error(err.message);
+    }
+    };
+```
+- here we can see we call teh `setTodosChange(true)` state change after we make the fetch API request
+- we also of course have to update the PUT requets to the edit API by making it include the JWT token
+- we do this again with the `Headers();` constructor, making a `myHeaders` object that we add teh content=type and JWT token headers too
+- we then make the PUT request as normal 
+- besides that small change to the handler, the EditTodo/EditModal component statys the same, as the majority of its functionality deals with making the modal work properly, which is inconsequential to our API
+
+### Updating Delete Todo Function
+
+- Lastly we have to update the `deleteTodo()` function we have for deleting todo elements, initially this is simple enough since all we really need to do is add the JWT token as a header to the DELETE request:
+```
+const deleteTodo = async (todoObj, filterTodos) => {
+    try {
+        const response = await fetch(`/dashboard/todos/${todoObj.todo_id}`, {
+            method: "DELETE",
+            headers: { token: localStorage.token }
+        })
+        const data = await response.json()
+        filterTodos(todoObj.todo_id);
+    } catch (error) {
+        console.error(error.message);
+    }
+}
+```
+- we do not need to construct a `Header` object since we are just using a single header here
+- this works as expected for deleting Todos, but we come across a new unintended interaction: when we delete all of our Todos, the next time we load the page we make an API call to fetch our todos of course, and the LEFT JOIN SQL query will return our user_name like we need it still, but since it returns a full single RECORD, we also get  `todo_id: null` and `description: null` properties being returned as well
+- so what this does is when we build our ListTodos component, and call the maping function to map our returned todo array onto the ListItem component, we make a ListItem with a `null` description and ID, and end up with a weird empty todo on our list, and its ugly
+- so therefore we have to add a conditional to the HTML return of ListTodos, so that we do not return or construct our ListItems when we have a single null return
+- to do this we can make our HTML reutnr of ListItem be:
+```
+return (
+    <main className="container mt-4">
+        <div className="row d-flex flex-column justify-content-center">
+            {
+            todos.length !== 0 && 
+                todos[0].todo_id !== null && 
+                    (todoHTML)
+            }
+        </div>
+    </main>
+)
+```
+- so here what we are doing is using a JS escape in the HTML to add a little shortcut conditional, where we first test if we have a a todo list yet at all with `todos.length !== 0`, then we test if the first todo has a `null` id with `allTodos[0].todo_id !== null` (and we do this since the only way to get a `null` `todo_id` is if there are none, since they are made by default), and then if both of these are true we then allow it to constrct the `todoHTML`
+- this notation works since JS tests the conditions one at a time, so the third condition in the "and" (`&&`) statements only gets executed if the previous are true, and in checking if `(todoHTML)` is `true` it gets executed to check, so this is like a little shortcut instead of sayign `if (todos.length !== 0 && allTodos[0].todo_id !== null) {(todoHTML)}`
+- **also note, important.** we need to have the initial `todos.length !== 0` condition, even thugh it seems like it sould work fine just by checking the first todo for the null, but the issue is that this render will happen before the initial API call on load is done, so we will not have any items in `todos` at first, and `todos[0]` is undifined, and then it gets mad ):
+
+## Adding JWT Token Handling & Verification
+
+- now that all of our APIs play nicely with the JWT token, we want to make sure we are dealing with the JWT token correctly when the user logs our, and when they revisit the page while the token is still valid so they do not need to log back In
+
+### JWT Logout
+
+- if the user clicks the logout button, we want to clear the token from the local storage so that the next erson to use the device doesnt have access to their account if they go to the same site
+- we do this with a simple logout button and handler that will remove the token, first we add a logout button to the HTML return of dashboard. which we had then removed previously, but now it will be better:
+```
+return (
+    <>
+        <main className="container text-center mt-4">
+            <div className="row d-flex flex-column justify-content-center">
+                <div className='d-flex flex-column w-100 align-items-center p-0'>
+                    <button className="btn btn-primary align-self-end" onClick={logout}>Logout</button>
+                    <h1>{name}'s ToDo List</h1>
+                </div>
+                <InputTodo setTodosChange={setTodosChange} />
+                <ListTodo allTodos={allTodos} setTodosChange={setTodosChange} />
+            </div>
+        </main>
+        
+    </>
+);
+```
+- one note on the CSS here is that i find it difficult to have a flexbox here where I want the name to be center then the logout button to be parallel to the name but to the right, we can do this with absolute positioning of coruse but also I feeel like people try to avoid that when possible
+- instead what I did here was make it a flex-column flexbox justified to center, then align the logout button end so it goes to one side, this also clearly stacks them, which I didnt actually expect at first, but now I like it stacked since the logout is out of the way of the main viiew, maybe will make a banner at the top later instead for search/logout
+- okay but the important functionality here is that the button calls teh logout handler:
+```
+const logout = (e) => {
+    e.preventDefault()
+    localStorage.removeItem("token")
+    setAuth(false)
+}
+```
+- in the logout handler, we just prevent default so it doesnt refresh, then we do `localStorage.removeItem("token")` to remove the JWT token from out local storage, then simply `setAuth(false)` to force the user to go back to the login page
+- if we now try to logout on our site, we can see the token disappear from the applications page of the dev tools as well, it works!
+
+### Adding Token Verification for Returning Users
+
+- okay so now we want a user to be able to be directed right to their page when they arrive at the website if they still have a valid JWT authentication
+- we already have this in our backend with the "auth/verify" route, but now we need to call this route in the front end
+- we want to call this route right in the App component so that it gets called when the webpage loads
+```
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const setAuth = (boolean) => {
+    setIsAuthenticated(boolean);
+  }
+
+  const verifyToken = async () => {
+    try {
+      const response = await fetch("auth/verify",
+        {
+          method: "GET",
+          headers: { token: localStorage.token}
+        });
+      const data = await response.json();
+      data === true ? (setAuth(true)) : (setAuth(false));
+
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
+
+  useEffect(() => {
+    verifyToken();
+  }, []);
+```
+- so to App we have added a `useEffect()` that will run when the page loads, and all it does it call `verifyToken()` which we have inplemented above
+- inside `verifyToken()`, we just make a GET request to the "auth/dashboard" route, and try to add our token as a header, we know that this route returns `true` as the response if the token is verified so we simpyl test that `data === true ? (setAuth(true)) : (setAuth(false));` and set the authentication state to either `true` or `false` accordingly
+- we have to make sure not to use a `if (data)` syntax here, since this will return true for all resonses as long as it exists, so our response if we are unverified is a 403 status with "Not Authorized" text, and since there is text `data` resolves as `true`, so we have to use the EXACTLY equal operator `===`
+- so now isAuthenticated is true, so we get redirect tot he dashboard immediately
+
+## Adding Notifications with "react-toastify"
+
+- 
