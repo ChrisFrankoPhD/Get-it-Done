@@ -3276,6 +3276,7 @@ function App() {
 - we have to make sure not to use a `if (data)` syntax here, since this will return true for all resonses as long as it exists, so our response if we are unverified is a 403 status with "Not Authorized" text, and since there is text `data` resolves as `true`, so we have to use the EXACTLY equal operator `===`
 - so now isAuthenticated is true, so we get redirect tot he dashboard immediately
 
-## Adding Notifications with "react-toastify"
+# Deploy Notes
 
-- 
+- we want a .git folder within our root directory, which we have already from when we did `git init`
+- in heroku, we must have a package.json file within the root directory as well
