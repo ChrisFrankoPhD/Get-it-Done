@@ -1434,28 +1434,28 @@ const resetDescription = (e) => {
 
 - so there are different arrow type things used for drawing database relationships:
 
-    ![image](./crowsFootNotation.JPG "Crows Foor Notation")
+    ![image](./notes/crowsFootNotation.JPG "Crows Foor Notation")
 
 - so when we draw these on tables, each end is connected to an attribute in a data table, and the symbol at the each end of the arrow tells us the type of relationship between the attributes 
 
-    ![image](./oneToOne.JPG "One to One")
+    ![image](./notes/oneToOne.JPG "One to One")
 
 - for example, the first arrow with the two single vertical lines means that there must be only a single element from that attribute, we can image an `employees` table and a `contracts` table, where an `employee_id` is the PK of `employees` and also the FK of `contracts`, we draw a connection between them with the "exactly one" cap at each end since an employee must have only one contract, and each contract must have only one employee it is for 
 
-    ![image](./oneToOneOptional.JPG "One to One Optional")
+    ![image](./notes/oneToOneOptional.JPG "One to One Optional")
 
 - we can also use one to one optional relationships, so we see a `users` table and a `drivers license` table here, and we know in real life, each user *can* have a *single* drivers license, so we can only have 1 but it is optional whether we have one or not, so 0 or 1, but then for every drivers license, each license *must* have exactly 1 user
 - so here we have an asymmetric relationship, so we notice the drivers license NEEDS a user, so the arrow cap on the user side has the exactly 1 symbol, so it is like an arrow pointing from the license user_id FK to the person user_id PK and the arrow tip shows the relationship from the drivers license perspective, conversely, the user can have 1 license, so the arrow direction from person user_id PK to license user_id FK has an arrow tip for "0 or 1"
 
-    ![image](./oneToMany.JPG "One to Many")
+    ![image](./notes/oneToMany.JPG "One to Many")
 
 - so one more example here, we have a mothers table and a kids table, and here we see since we define the person as a "mother", they must have at least one kid, so the arrow from `mother` to `kids` has a cap of '1 or more' (or many mandatory), while the arrow from kids to mother has the cap of 'exactly 1' since each child has 1 biological mother
 
-    ![image](./oneToManyOptional.JPG "One to Many Optional")
+    ![image](./notes/oneToManyOptional.JPG "One to Many Optional")
 
 - okay actually lastly we have one to many optional, a users table and cars table, where a car has a single owner, but it may not be owned as well, so we have a '0 or 1' arrow from car to user, but from user to cars we have a '0 or many' arrow, since a user may have no cars, but may also have multiple cars
 
-    ![image](./manyToMany.JPG "Many to Many")
+    ![image](./notes/manyToMany.JPG "Many to Many")
 
 - okay so actually last one for real, here we have students and courses, to be a student you must be taking at least 1 course, but coul take many, so from student to course we have a '1 or more' arrow, and from course to student we have a '0 or more' arrow since wemay have a course that noone enrolls in
 
@@ -1463,7 +1463,7 @@ const resetDescription = (e) => {
 
 - so for us, we have a table for our users and a table for our todos, and we know a user can have many todos, but they may also have not made any yet, or can delete all of them, as for our todos, each todo must have a user who created it, and they are all unique so they can only have a singl user, so we make an arrow from users user_id PK to todos user_id FK with a '0 or more' arrow tip, while from todos user_id FK to users user_id PK, we have a 'exactly 1' arrow tip:
 
-    ![image](./todoDatabaseDrawing.JPG "ToDo Database")
+    ![image](./notes/todoDatabaseDrawing.JPG "ToDo Database")
 
 ## SQL Join Operators
 
@@ -1491,7 +1491,7 @@ SELECT * FROM users INNER JOIN todos ON users.user_id = todos.user_id WHERE user
     - right join
     - and full outer join
 
-    ![image](./joinOperatorTypes.JPG "tpyes of join operators")
+    ![image](./notes/joinOperatorTypes.JPG "tpyes of join operators")
 
 - **INNER JOIN** selects only the records that matching attributes in both tables, so here we get all of the records from both the `users` and `todos` table that have matching attributes
 - **LEFT JOIN** selects all records from the left table, and then all matching records from the right table, so in this case we get all the users even ones without matching attributes, but for the todos we only take ones with matching attributes
@@ -1511,7 +1511,7 @@ SELECT * FROM users INNER JOIN todos ON users.user_id = todos.user_id WHERE user
 - okay so finally we will be creatign the database we want using the principles we have talked about here,
 - we will be creating the database using the design we have been talking about, which we have already shown above:
 
-    ![image](./todoDatabaseDrawing.JPG "ToDo Database")
+    ![image](./notes/todoDatabaseDrawing.JPG "ToDo Database")
 
 - so we know we want to create a database, make a users table with a UUID (Universally Unique Identifier) PK, and make a todos table with a FK of the user_id 
 - we will write these commands in the database.sql file which allows us to keep track of what we did and write them out nicely before copying them in to the postgres command line application
@@ -1909,7 +1909,7 @@ const newUser = await db.query(
 ### Create JWT Generator
 
 - in order to make proper JWTs, we are going to want to also install the the 'dotenv' package with npm on our server, this is what allows us to use the secret keys we keep in the environment variables file: ".env" (.env/dotenv, get it?)
-- so with this installed we will create a new '.env' file in the server folder, and define some secret key there, in this case my entire .env file is just `jwtSecret = 'ferbie14'`
+- so with this installed we will create a new '.env' file in the server folder, and define some secret key there, in this case my entire .env file is just `jwtSecret = 'secret'`
 - we now want to create a new 'jwtGenerator.js' file, and we will make a new utilities folder for this, which is where we will keep our small files that just do a single thing, a specific function, like in this case making a quick JWT
 - so this is where we call the functions for tunring our info that we want to send back to the client into an actual json web token, the code for this is relatively simple:
 ```

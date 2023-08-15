@@ -1,20 +1,20 @@
 import {useEffect, useState} from "react";
 import EditTodo from "./EditTodo";
 
-const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos}) => {
+const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos, modals, setModals}) => {
     // console.log("ListItem");
     // console.log(todoObj);
 
     const deleteTodo = async (todoObj, filterTodos) => {
         try {
-            const response = await fetch(`/dashboard/todos/${todoObj.todo_id}`, {
+            await fetch(`/dashboard/todos/${todoObj.todo_id}`, {
                 method: "DELETE",
                 headers: { token: localStorage.token }
             })
-            const data = await response.json()
 
             filterTodos(todoObj.todo_id);
 
+            // const data = await response.json()
             // console.log(data);
         } catch (error) {
             console.error(error.message);
@@ -24,28 +24,29 @@ const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos}) => {
     return (
         <div className={
             (idx + 1) === todos.length ? (
-                "d-flex p-0 align-items-center"
+                "d-flex p-0 align-items-center px-2 list-item"
             ) : (
-                "d-flex border-bottom p-0 align-items-center"
+                "d-flex p-0 align-items-center px-2 list-item border-bottom"
             )
         } 
         >
-            <div className="list-num col-1 p-2 text-center d-flex justify-content-center align-content-center flex-wrap">
+            <div className="list-num col-md-1 col-1 p-2 text-center d-flex justify-content-center align-content-center flex-wrap ">
                 <h3 className="m-0">{idx + 1}</h3>
             </div>
-            <div className="col-10 list-det lead d-flex align-content-center flex-wrap p-2 px-3">
+            <div className="col-md-10 col-8 list-det lead d-flex align-content-center flex-wrap p-2 px-3">
                 <p className="m-0 text-start">{todoObj.description}</p> 
             </div>
-            <div className="col-1 d-flex flex-column">
-                <EditTodo todoObj={todoObj} key={todoObj.todo_id} setTodosChange={setTodosChange} />
-                <button className="btn btn-danger flex-grow-1 w-100 px-1" onClick={() => deleteTodo(todoObj, filterTodos)}>Delete</button>
+            <div className="col-3 col-md-1 d-flex flex-column align-items-center">
+                <EditTodo todoObj={todoObj} key={todoObj.todo_id} setTodosChange={setTodosChange} idx={idx} modals={modals} setModals={setModals} />
+                <button className="btn del-butt flex-grow-1 px-1 mb-3 mt-1" onClick={() => deleteTodo(todoObj, filterTodos)}><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>
     )
 }
 
-const ListTodo = ({ allTodos, setTodosChange }) => {
+const ListTodo = ({ allTodos, setTodosChange, searchText }) => {
     const [todos, setTodos] = useState([])
+    const [modals, setModals] = useState([])
 
     const filterTodos = (todoId) => {
         // console.log("filterTodos initiated");
@@ -60,27 +61,83 @@ const ListTodo = ({ allTodos, setTodosChange }) => {
 
     useEffect(() => {
         setTodos(allTodos);
+        buildTodoHtml()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [allTodos])
-    
-    const todoHTML = todos.map((todoObj, idx) => {
-        const index = Number(idx)
-        return (
-            <ListItem todoObj={todoObj} key={idx} idx={idx} filterTodos={filterTodos} todos={todos} setTodosChange={setTodosChange} />
-        )
-    }) 
 
-    return (
-        <main className="container mt-4">
-            <div className="row d-flex flex-column justify-content-center">
-                {
-                todos.length !== 0 && 
-                    allTodos[0].todo_id !== null && 
-                        (todoHTML)
-                }
-            </div>
-        </main>
-    )
+    const buildTodoHtml = () => {
+        try {
+            const tempTodoHtml = todos.map((todoObj, idx) => {
+                return (
+                    <ListItem todoObj={todoObj} key={idx} idx={idx} filterTodos={filterTodos} todos={todos} setTodosChange={setTodosChange} modals={modals} setModals={setModals} />
+                )
+            })
+            return tempTodoHtml
+        } catch (error) {
+            console.error(error);
+        }
+        
+    }
+
+    // const todoHTML = todos.map((todoObj, idx) => {
+    //     return (
+    //         <ListItem todoObj={todoObj} key={idx} idx={idx} filterTodos={filterTodos} todos={todos} setTodosChange={setTodosChange} />
+    //     )
+    // }) 
+
+    function renderTodoHtml() {
+        const searchTodos = (query, componentList) => {
+            let searchList = [];
+            componentList.map((todoComp) => {
+                const description = todoComp.props.todoObj.description.toLowerCase().trim();
+                if (description.includes(query.toLowerCase().trim())) {
+                    searchList.push(todoComp);
+                };
+            });
+            return searchList;
+        };
+
+        const todoHTML = buildTodoHtml();
+        if (!searchText.trim()) {
+            return (
+                <main className="container mt-4">
+                    <div className="row d-flex flex-column justify-content-center">
+                        {
+                        allTodos.length !== 0 && 
+                            allTodos[0].todo_id !== null &&
+                                (todoHTML)
+                        }
+                    </div>
+                </main>
+            )
+        } else {
+            const searchTodoHTML = searchTodos(searchText, todoHTML);
+            return (
+                <main className="container mt-4">
+                    <div className="row d-flex flex-column justify-content-center">
+                        {
+                        allTodos.length !== 0 && 
+                            allTodos[0].todo_id !== null &&
+                                (searchTodoHTML)
+                        }
+                    </div>
+                </main>
+            )
+        }
+    }
+
+    return (renderTodoHtml())
+    // return (
+    //     <main className="container mt-4">
+    //         <div className="row d-flex flex-column justify-content-center">
+    //             {
+    //             allTodos.length !== 0 && 
+    //                 allTodos[0].todo_id !== null &&
+    //                     (todoHTML)
+    //             }
+    //         </div>
+    //     </main>
+    // )
 }
 
 export default ListTodo

@@ -9,9 +9,11 @@ import Register from './Components/Register';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import NavBar from './Components/Dashboard/NavBar';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [searchText, setSearchText] = useState("")
 
   const setAuth = (boolean) => {
     setIsAuthenticated(boolean);
@@ -34,6 +36,7 @@ function App() {
 
   useEffect(() => {
     verifyToken();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -63,7 +66,10 @@ function App() {
           exact path="/" 
           element={
             isAuthenticated ? (
-              <Dashboard setAuth={setAuth} pauseOnFocusLoss={false} />
+              <>
+                <NavBar setAuth={setAuth} searchText={searchText} setSearchText={setSearchText} />
+                <Dashboard setAuth={setAuth} pauseOnFocusLoss={false} searchText={searchText} />
+              </>
             ) : (
               <Navigate to="/login" />
             )

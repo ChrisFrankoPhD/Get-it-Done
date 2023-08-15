@@ -14,18 +14,11 @@ module.exports = async (req, res, next) => {
 
         // use jwt to verify the token with the secret key
         const payload = jwt.verify(jwtToken, process.env.jwtSecret);
-        // console.log("user payload:");
-        // console.log(payload);
-        // console.log(payload.user);
-        // console.log(req);
         req.user = payload.user;
-        // console.log(req.user);
         next();
     } catch (error) {
-        // console.log("Auth Error:");
         console.error(error.message);
         return res.status(403).json("Authoization: Not Authorized")
     }
-    console.log("authorization: end of function");
-    
+    console.log("authorization: end of function");  
 }

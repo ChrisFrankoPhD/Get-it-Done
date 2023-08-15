@@ -16,6 +16,18 @@ dialog::backdrop {
   background-color: rgb(26, 25, 25);
 }
 
+.list-item {
+  min-height: 90px;
+  max-height: 110px;
+}
+
+
+html.noscroll {
+  position: fixed; 
+  overflow-y: scroll;
+  width: 100%;
+}
+
 .close {
   border: 2px solid black;
   border-radius: 10%;
@@ -31,6 +43,171 @@ dialog::backdrop {
 }
 
 .list-num {
-  width: 7%;
   height: 70px;
+}
+
+.justify-self-end {
+  justify-self: flex-end;
+}
+
+.del-butt {
+  border: 2px solid transparent;
+  border-radius: 10%;
+  cursor: pointer;
+  width: 5rem;
+  font-size: clamp(0.75rem, 0.5227rem + 0.9697vw, 1.25rem);
+}
+
+.del-butt:hover {
+  border: 2px solid red;
+  border-radius: 10%;
+  color: red;
+}
+
+.edit-butt {
+  border: 2px solid transparent;
+  border-radius: 10%;
+  cursor: pointer;
+  width: 5rem;
+  font-size: clamp(0.75rem, 0.5227rem + 0.9697vw, 1.25rem);
+
+}
+.edit-butt:hover {
+  border: 2px solid rgb(180, 112, 243);
+  border-radius: 10%;
+  color: rgb(180, 112, 243);
+}
+
+.collapse-button {
+  background-color: transparent!important;
+  border: none;
+}
+
+.collapsible {
+  width: 4rem;
+  position: absolute;
+  left: 100%;
+}
+
+.search-input {
+  min-width: 20rem;
+}
+
+.todo-input {
+  max-width: 50%;
+}
+
+.edit-modal {
+  width: 50%;
+  border-radius: 2% / 15%;
+}
+
+.edit-form {
+  align-items: center;
+}
+
+.modal-buttons {
+  flex-direction: column;
+}
+
+.modal-save {
+  margin: 0.25rem 0.5rem;
+  border: 2px solid transparent;
+  border-radius: 10%;
+}
+
+.modal-save:hover {
+  border: 2px solid rgb(27, 194, 49);
+  border-radius: 10%;
+  color: rgb(27, 194, 49);
+}
+
+.modal-close {
+  margin: 0.25rem 0.5rem;
+  border: 2px solid transparent;
+  margin: 0.25rem 0.5rem;
+}
+
+@media (max-width: 1400px) {
+  .edit-modal {
+    border-radius: 2% / 12.5%;
+  }
+}
+
+@media (max-width: 1200px) {
+  .edit-modal {
+    border-radius: 3% / 12.5%;
+  }
+}
+
+
+@media (max-width: 992px) {
+  .edit-modal {
+    width: 80%;
+  }
+
+  .edit-form {
+    flex-direction: column;
+    border: none!important;
+    align-items: normal;
+  }
+
+  .modal-buttons {
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 0.5rem 1rem;
+  }
+
+  .modal-save {
+    flex-grow: 0;
+  }
+
+  .modal-idx {
+    display: none!important;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-input {
+    min-width: 10rem;
+  }
+
+  .todo-input {
+    min-width: 90%;
+  }
+
+  .add-button {
+    width: 25%;
+  }
+
+  .edit-butt {
+    border: 1px solid rgb(180, 112, 243);
+    border-radius: 10%;
+    color: rgb(180, 112, 243);
+    width: 3.5rem;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    margin-bottom: 1rem;
+  }
+
+  .del-butt {
+    border: 1px solid red;
+    border-radius: 10%;
+    color: red;
+    width: 3.5rem;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .edit-modal {
+    border-radius: 4% / 13%;
+  }
+
+  
+}
+
+@media (max-width: 600px) {
+  .edit-modal {
+    border-radius: 5% / 12.5%;
+  }
 }

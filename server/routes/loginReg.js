@@ -35,9 +35,7 @@ router.post("/register", validInfo, async (req, res) => {
 
         // 5. generate the JWT token
         const token = jwtGenerator(newUser.rows[0].user_id);
-
         res.json({token})
-
     } catch (error) {
         console.error(error.message);
         res.status(500).json("Server Error")

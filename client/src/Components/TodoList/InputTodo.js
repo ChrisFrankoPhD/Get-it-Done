@@ -37,10 +37,10 @@ const InputTodo = ({ setTodosChange }) => {
     return (
         <div className="container">
             <div className="row text-center">
-                <form className="w-100 mt-3 d-flex justify-content-center" onSubmit={onSubmitForm} >
-                    <div className="w-50 d-flex justify-content-center border border-1 border-secondary-subtle">
-                        <input className=" form-control border-0" name="inputTodo" placeholder="What do you need ToDo?" value={description} onChange={updateDescription} />
-                        <button className="btn btn-primary" >Add</button>
+                <form className="w-100 mt-3 d-flex justify-content-center flex-grow-1" onSubmit={onSubmitForm} >
+                    <div className="d-flex flex-column flex-md-row justify-content-center align-items-center w-100">
+                        <input className="todo-input form-control border-1" name="inputTodo" placeholder="What do you need ToDo?" value={description} onChange={updateDescription} />
+                        <button className="btn btn-primary mt-2 mt-md-0 add-button" >Add</button>
                     </div>
                 </form>
             </div>

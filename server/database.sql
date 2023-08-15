@@ -1,15 +1,3 @@
--- CREATE DATABASE todoapp;
-
--- CREATE TABLE users(
---     todo_id SERIAL PRIMARY KEY,
---     description VARCHAR(355)
--- );
-
--- CREATE TABLE todos(
---     todo_id SERIAL PRIMARY KEY,
---     description VARCHAR(355)
--- );
-
 CREATE TABLE users(
     user_id UUID DEFAULT uuid_generate_v4(),
     user_name VARCHAR(255) NOT NULL,
