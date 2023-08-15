@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import EditTodo from "./EditTodo";
 
-const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos, modals, setModals}) => {
+const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos }) => {
     // console.log("ListItem");
     // console.log(todoObj);
 
@@ -37,8 +37,8 @@ const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos, modals, set
                 <p className="m-0 text-start">{todoObj.description}</p> 
             </div>
             <div className="col-3 col-md-1 d-flex flex-column align-items-center">
-                <EditTodo todoObj={todoObj} key={todoObj.todo_id} setTodosChange={setTodosChange} idx={idx} modals={modals} setModals={setModals} />
-                <button className="btn del-butt flex-grow-1 px-1 mb-3 mt-1" onClick={() => deleteTodo(todoObj, filterTodos)}><i class="fa-solid fa-trash"></i></button>
+                <EditTodo todoObj={todoObj} key={todoObj.todo_id} setTodosChange={setTodosChange} idx={idx} />
+                <button className="btn del-butt flex-grow-1 px-1 mb-3 mt-1" onClick={() => deleteTodo(todoObj, filterTodos)}><i className="fa-solid fa-trash"></i></button>
             </div>
         </div>
     )

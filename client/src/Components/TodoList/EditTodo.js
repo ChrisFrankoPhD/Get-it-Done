@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const EditModal = ({ todoObj, setTodosChange, idx, scrollTop }) => {
+const EditModal = ({ todoObj, setTodosChange, idx }) => {
   const [description, setDescription] = useState(todoObj.description);
 
 //   console.log("building EditModal");
@@ -36,21 +36,9 @@ const EditModal = ({ todoObj, setTodosChange, idx, scrollTop }) => {
     //   const data = await response.json();
     //   console.log(data);
       setTodosChange(true)
-      
-      // document.querySelector("body").classList.remove("modal-open");
 
-
-      // Alternative Solution for Modal Scroll Behaviour
-      document.querySelector("html").classList.remove("noscroll");
-      window.scrollTo({
-        top: -scrollTop,
-        left: 0,
-        behavior: "instant",
-      });
-      document.querySelector("html").classList.remove("top");
-      document.styleSheets[6].deleteRule(0)
+      document.querySelector("body").classList.remove("modal-open");
       document.getElementById(`modal-${todoObj.todo_id}`).close()
-      document.getElementById(`modal-${todoObj.todo_id}`).remove()
 
     } catch (err) {
       console.error(err.message);
@@ -74,12 +62,12 @@ const EditModal = ({ todoObj, setTodosChange, idx, scrollTop }) => {
           />
         </div>
         <div className="d-flex modal-buttons">
-          <button className="btn flex-grow-1 px-1 mb-3 mt-1 modal-save fs-4"><i class="fa-regular fa-floppy-disk"></i></button>
+          <button className="btn flex-grow-1 px-1 mb-3 mt-1 modal-save fs-4"><i className="fa-regular fa-floppy-disk"></i></button>
           <button
             type="button"
             className="close py-1 px-2 align-self-end modal-close fs-4"
             onClick={() => setDescription(todoObj.description)}>
-            <i class="fa-solid fa-circle-xmark"></i>
+            <i className="fa-solid fa-circle-xmark"></i>
           </button>
         </div>
       </form>
@@ -89,89 +77,44 @@ const EditModal = ({ todoObj, setTodosChange, idx, scrollTop }) => {
 
 
 
-const EditTodo = ({ todoObj, setTodosChange, idx, modals, setModals }) => {
-  const [editModal, setEditModal] = useState("");
+const EditTodo = ({ todoObj, setTodosChange, idx }) => {
+    const [editModal, setEditModal] = useState("");
 
-//   console.log("building EditTodo Button");
-//   console.log(todoObj);
+    //   console.log("building EditTodo Button");
+    //   console.log(todoObj);
 
-  const renderEditModal = async (todoObj, idx) => {
-    // console.log("renderEditModal:");
-    // console.log(todoObj);
-    const html = document.querySelector("html");
-    const body = document.querySelector("body");
-    let scrollTop = -((html.scrollTop) ? (html.scrollTop) : (body.scrollTop));
+    const renderEditModal = async (todoObj, idx) => {
+        // console.log("renderEditModal:");
+        // console.log(todoObj);
+        const body = document.querySelector("body");
 
-    if (!modals.includes(todoObj)) {
+        console.log("constructing modal");
+        const key = `modal-${todoObj.todo_id}`;
+        await setEditModal(<EditModal todoObj={todoObj} key={key} setTodosChange={setTodosChange} idx={idx} />);
 
-      console.log("constructing modal");
-      const key = `modal-${todoObj.todo_id}`;
-      await setEditModal(<EditModal todoObj={todoObj} key={key} setTodosChange={setTodosChange} idx={idx} scrollTop={scrollTop} />);
-      setModals(() => {
-        modals.push(todoObj);
-        return modals;
-      })
+        const modal = document.getElementById(`modal-${todoObj.todo_id}`);
+        modal.showModal();
+        body.classList.add('modal-open')
 
-      const modal = document.getElementById(`modal-${todoObj.todo_id}`);
-      modal.showModal();
-
-      document.querySelector(`#modal-${todoObj.todo_id} .close`).addEventListener("click", () => {
-        // modal.close();
-        // document.querySelector("body").classList.remove("modal-open");
-
-        // Part of alternative solution
-        modal.close();
-        html.classList.remove("noscroll");
-        window.scrollTo({
-          top: -scrollTop,
-          left: 0,
-          behavior: "instant",
+        document.querySelector(`#modal-${todoObj.todo_id} .close`).addEventListener("click", () => {
+            modal.close();
+            body.classList.remove("modal-open");
         });
-        html.classList.remove("top");
-        document.styleSheets[6].deleteRule(0)
-        console.log(`close Modal ${idx + 1}`);
-        console.log(`${document.styleSheets[6].cssRules[0].selectorText}, ${document.styleSheets[6].cssRules[1].selectorText}`);
-      });
 
-      document.querySelector(`body`).addEventListener("click", (e) => {
-        // console.log(e.target);
-        // console.log(document.getElementById(`modal-${todoObj.todo_id}`));
-        if (e.target === document.getElementById(`modal-${todoObj.todo_id}`)) {
-          // console.log("clicked off modal");
-          // modal.close();
-          // document.querySelector("body").classList.remove("modal-open");
-
-          // Part of alternative solution
-          html.classList.remove("noscroll");
-          window.scrollTo({
-            top: -scrollTop,
-            left: 0,
-            behavior: "instant",
-          });
-          html.classList.remove("top");
-          document.styleSheets[6].deleteRule(0)
-          modal.close();
-          console.log(`close Modal ${idx + 1}`);
-          console.log(`${document.styleSheets[6].cssRules[0].selectorText}, ${document.styleSheets[6].cssRules[1].selectorText}`);
-        }
-      });
-    } else {
-
-      document.getElementById(`modal-${todoObj.todo_id}`).showModal();
-      document.styleSheets[6].insertRule(`html.top {top: ${scrollTop}px}`)
-      if (document.documentElement.scrollHeight > window.innerHeight) {
-        // html.style.setProperty('--st', -(scrollTop) + "px")
-        html.classList.add("noscroll");
-        html.classList.add("top");
-        console.log(`open Modal ${idx + 1}`);
-        console.log(`${document.styleSheets[6].cssRules[0].selectorText}, ${document.styleSheets[6].cssRules[1].selectorText}`);
-      }
+        document.querySelector(`body`).addEventListener("click", (e) => {
+            // console.log(e.target);
+            // console.log(document.getElementById(`modal-${todoObj.todo_id}`));
+            if (e.target === document.getElementById(`modal-${todoObj.todo_id}`)) {
+                console.log("clicked off modal");
+                modal.close();
+                document.querySelector("body").classList.remove("modal-open");
+            }
+        });
     }
-  };
 
   return (
     <>
-      <button className="btn edit-butt flex-grow-1 mb-2 mt-3 px-1" onClick={() => renderEditModal(todoObj, idx)}><i class="fa-regular fa-pen-to-square"></i></button>
+      <button className="btn edit-butt flex-grow-1 mb-2 mt-3 px-1" onClick={() => renderEditModal(todoObj, idx)}><i className="fa-regular fa-pen-to-square"></i></button>
       {editModal}
     </>
   );
