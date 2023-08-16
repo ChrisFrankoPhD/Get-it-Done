@@ -62,10 +62,10 @@ const EditModal = ({ todoObj, setTodosChange, idx }) => {
           />
         </div>
         <div className="d-flex modal-buttons">
-          <button className="btn flex-grow-1 px-1 mb-3 mt-1 modal-save fs-4"><i className="fa-regular fa-floppy-disk"></i></button>
+          <button className="btn px-1 my-2 modal-save fs-4"><i className="fa-regular fa-floppy-disk"></i></button>
           <button
             type="button"
-            className="close py-1 px-2 align-self-end modal-close fs-4"
+            className="btn close px-1 my-2 align-self-end modal-close fs-4"
             onClick={() => setDescription(todoObj.description)}>
             <i className="fa-solid fa-circle-xmark"></i>
           </button>

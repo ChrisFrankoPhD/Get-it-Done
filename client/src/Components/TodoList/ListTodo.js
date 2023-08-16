@@ -4,6 +4,7 @@ import EditTodo from "./EditTodo";
 const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos }) => {
     // console.log("ListItem");
     // console.log(todoObj);
+    const [crossed, setCrossed] = useState(false)
 
     const deleteTodo = async (todoObj, filterTodos) => {
         try {
@@ -21,20 +22,50 @@ const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos }) => {
         }
     }
 
+
+
     return (
         <div className={
             (idx + 1) === todos.length ? (
-                "d-flex p-0 align-items-center px-2 list-item"
+                crossed ? (
+                    "d-flex p-0 align-items-center px-2 list-item"
+                ) : (
+                    "d-flex p-0 align-items-center px-2 list-item"
+                )
             ) : (
-                "d-flex p-0 align-items-center px-2 list-item border-bottom"
+                crossed ? (
+                    "d-flex p-0 align-items-center px-2 list-item border-bottom"
+                ) : (
+                    "d-flex p-0 align-items-center px-2 list-item border-bottom"
+                )
             )
-        } 
-        >
-            <div className="list-num col-md-1 col-1 p-2 text-center d-flex justify-content-center align-content-center flex-wrap ">
-                <h3 className="m-0">{idx + 1}</h3>
+        }>
+            <div className="list-num col-md-1 col-1 p-2 text-center d-flex justify-content-between flex-wrap ">
+                <button className="btn check-butt px-1 mb-3 mt-1" onClick={() => {setCrossed(!crossed)}}>
+                    <i className={ 
+                        crossed ? ( 
+                            "fa-solid fa-square-check fs-4"
+                        ) : (
+                            "fa-regular fa-square fs-4"
+                        )
+                    }></i>
+                </button>
+                <h3 className={ 
+                    crossed ? ( 
+                        "mb-3 mt-1 py-1 crossed-list-item d-none d-md-block"
+                    ) : (
+                        "mb-3 mt-1 py-1 d-none d-md-block"
+                    )
+                }>{idx + 1}</h3>
             </div>
-            <div className="col-md-10 col-8 list-det lead d-flex align-content-center flex-wrap p-2 px-3">
-                <p className="m-0 text-start">{todoObj.description}</p> 
+            <div className={ 
+                    crossed ? ( 
+                        "col-md-10 col-8 list-det lead d-flex align-content-center flex-wrap p-2 px-3 crossed-description crossed-list-item"
+                    ) : (
+                        "col-md-10 col-8 list-det lead d-flex align-content-center flex-wrap p-2 px-3"
+                    )
+                }>
+                <p className="m-0 text-start px-2 text-dark">&nbsp;&nbsp;{todoObj.description}&nbsp;&nbsp;</p> 
             </div>
             <div className="col-3 col-md-1 d-flex flex-column align-items-center">
                 <EditTodo todoObj={todoObj} key={todoObj.todo_id} setTodosChange={setTodosChange} idx={idx} />
