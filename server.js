@@ -7,8 +7,8 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 
 if (process.env.NODE_ENV === "production") {
-    app.use(express.static(path.join(__dirname, "client/public")));
-}
+    app.use(express.static(path.join(__dirname, "client/build")));
+};
 //ROUTES//
 // register and login
 app.use("/auth", require("./routes/loginReg"));
