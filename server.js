@@ -17,7 +17,7 @@ app.use("/auth", require("./routes/loginReg"));
 app.use("/dashboard", require("./routes/dashboard"));
 
 app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirName, "client/build/index.html"));
+    res.sendFile(path.join(__dirname, "client/build/index.html"));
 });
 
 // Start Server
