@@ -24,10 +24,11 @@ const Dashboard = ({ searchText, setAuth }) => {
             }
             setName(data[0].user_name)
             setAllTodos(data)
-            // console.log(allTodos);
+            console.log(allTodos);
         } catch (error) {
             console.error(error.message);
         }
+        // DEPRECIATED SEARCH FUNCTIONALITY, MOVED THIS TO BE CLIENT SIDE ONLY
         // try {
         //     if (!searchText.trim()) {
         //         const response = await fetch("/dashboard/", {

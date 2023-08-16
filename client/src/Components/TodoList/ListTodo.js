@@ -4,7 +4,7 @@ import EditTodo from "./EditTodo";
 const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos }) => {
     // console.log("ListItem");
     // console.log(todoObj);
-    const [crossed, setCrossed] = useState(false)
+    const [crossed, setCrossed] = useState(todoObj.crossed)
 
     const deleteTodo = async (todoObj, filterTodos) => {
         try {
@@ -21,27 +21,45 @@ const ListItem = ({todoObj, filterTodos, setTodosChange, idx, todos }) => {
             console.error(error.message);
         }
     }
+    const toggleCrossed = async (todoObj) => {
+        // console.log("in toggleCrossed Function");
+        const cross = !crossed;
+        await setCrossed(!crossed);
+
+        const todoID = todoObj.todo_id;
+        await dbCrossed(cross, todoID);
+    }
+    const dbCrossed = async (cross, todoID) => {
+        console.log("in dbCrossed Function");
+        try {
+            const body = { cross };
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+            myHeaders.append("token", localStorage.token);
+
+            const response = await fetch(`dashboard/todos/toggle/${todoID}`, {
+                method: "PUT",
+                headers: myHeaders,
+                body: JSON.stringify(body),
+            });
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
 
 
 
     return (
         <div className={
             (idx + 1) === todos.length ? (
-                crossed ? (
-                    "d-flex p-0 align-items-center px-2 list-item"
-                ) : (
-                    "d-flex p-0 align-items-center px-2 list-item"
-                )
+                "d-flex p-0 align-items-center px-2 list-item"
+
             ) : (
-                crossed ? (
-                    "d-flex p-0 align-items-center px-2 list-item border-bottom"
-                ) : (
-                    "d-flex p-0 align-items-center px-2 list-item border-bottom"
-                )
+                "d-flex p-0 align-items-center px-2 list-item border-bottom"
             )
         }>
             <div className="list-num col-md-1 col-1 p-2 text-center d-flex justify-content-between flex-wrap ">
-                <button className="btn check-butt px-1 mb-3 mt-1" onClick={() => {setCrossed(!crossed)}}>
+                <button className="btn check-butt px-1 mb-3 mt-1" onClick={() => toggleCrossed(todoObj)}>
                     <i className={ 
                         crossed ? ( 
                             "fa-solid fa-square-check fs-4"

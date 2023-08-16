@@ -14,3 +14,5 @@ CREATE TABLE todos(
     PRIMARY KEY (todo_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+ALTER TABLE todos ADD COLUMN crossed BOOLEAN NOT NULL DEFAULT FALSE;

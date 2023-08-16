@@ -7,7 +7,7 @@ router.get("/", authorization, async (req, res) => {
     try {
         // console.log(req.user.id);
         const user_data = await db.query(
-            "SELECT u.user_name, t.todo_id, t.description FROM users as u LEFT JOIN todos as t ON u.user_id = t.user_id WHERE u.user_id=$1 ORDER BY t.todo_id asc",
+            "SELECT u.user_name, t.todo_id, t.description, t.crossed FROM users as u LEFT JOIN todos as t ON u.user_id = t.user_id WHERE u.user_id=$1 ORDER BY t.todo_id asc",
             [req.user.id]
         );
         // console.log(user_data.rows);
@@ -46,6 +46,30 @@ router.put("/todos/:todo_id", authorization, async(req, res) => {
         const updateTodo = await db.query(
             "UPDATE todos SET description=$3 WHERE (user_id=$1 AND todo_id=$2) RETURNING todos.todo_id, todos.description",
             [req.user.id, todo_id, description]
+        );
+
+        if (updateTodo.rows.length === 0) {
+            return res.json("this todo is not yours")
+        }
+
+        res.json(updateTodo.rows[0])
+    } catch (error) {
+        console.error(error.message);
+    }
+})
+
+// Update a Todo
+router.put("/todos/toggle/:todo_id", authorization, async(req, res) => {
+    console.log("dashboard: update route");
+    try {
+        const { todo_id } = req.params;
+        const { cross } = req.body;
+        // console.log(todo_id);
+        // console.log(description);
+
+        const updateTodo = await db.query(
+            "UPDATE todos SET crossed=$3 WHERE (user_id=$1 AND todo_id=$2) RETURNING todos.todo_id, todos.crossed",
+            [req.user.id, todo_id, cross]
         );
 
         if (updateTodo.rows.length === 0) {
