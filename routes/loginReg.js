@@ -37,6 +37,8 @@ router.post("/register", validInfo, async (req, res) => {
         const token = jwtGenerator(newUser.rows[0].user_id);
         res.json({token})
     } catch (error) {
+        console.error("register error");
+        console.error(error);
         console.error(error.message);
         res.status(500).json("Server Error")
     }
@@ -71,6 +73,7 @@ router.post("/login", validInfo, async (req, res) => {
 
         res.json({token})
     } catch (error) {
+        console.error("login error");
         console.error(error.message);
         res.status(500).json("Server Error")
     }
