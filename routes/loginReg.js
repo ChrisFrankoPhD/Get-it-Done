@@ -48,7 +48,8 @@ router.post("/login", validInfo, async (req, res) => {
     try {
         // 1. destructure req.body to get name email password
         const {email, password} = req.body;
-
+        console.log(email);
+        console.log(password);
         // 2. check if user doesn't exist (if user does not exist, throw error)
         const user = await db.query(
             "SELECT * FROM users WHERE user_email=$1;",
@@ -59,6 +60,7 @@ router.post("/login", validInfo, async (req, res) => {
         };
 
         // 3. Check if incoming password === database password
+        console.log("check password:");
         const validPassword = await bcrypt.compare(password, user.rows[0].user_password)
         if (!validPassword) {
             return res.status(401).json("Incorrect Email Or Password")

@@ -170,7 +170,7 @@ const Pool = require("pg").Pool
 
 const pool = new Pool({
     user: "postgres",
-    password: "oishi69fohpo",
+    password: "***",
     port: 5432,
     database: "fluetodo"
 })
@@ -186,7 +186,7 @@ const Pool = require("pg").Pool
 
 const pool = new Pool({
     user: "postgres",
-    password: "oishi69fohpo",
+    password: "***",
     port: 5432,
     database: "fluetodo"
 })
@@ -275,7 +275,7 @@ const Pool = require("pg").Pool
 
 const pool = new Pool({
     user: "postgres",
-    password: "oishi69fohpo",
+    password: "***",
     port: 5432,
     database: "fluetodo"
 })
@@ -3279,4 +3279,98 @@ function App() {
 # Deploy Notes
 
 - we want a .git folder within our root directory, which we have already from when we did `git init`
-- in heroku, we must have a package.json file within the root directory as well
+- in heroku, we must have a package.json file within the root directory as well, which means we have to move the enitrety of the server folder to the root folder, and just delete the server folder, so now the server lives in the root, and the package.json is there
+
+
+## Server.js
+
+- now we want to deal with our main server file
+
+- so in the video he had already renamed the server.js file to index.js, this might be mandatory since I know alot of servers look for "index" labelled files to initiate things, I will leave it for now
+- in the file we have to specify a few things, our code is going to be hosted on heroku so we need to have a way for our server file to use tthings supplied by heroku, liek the port number or file pathways
+- for the port number we can add `const PORT = process.env.PORT || 5000;`, which will try to call PORT from environment variables supplied by heroku if we are in production, and otherwise will default to port 5000 so we can still test things in development
+- we can also add an import for a bult in "path" module, which just allows us to use some functions that build path names, which we will need to do to build to combine a path name specified by heroku, with internal paths within our file structure
+```
+const path = require("path");
+...
+if (process.env.NODE_ENV === "production") {
+    app.use(express.static(path.join(__dirname, "client/build")));
+}
+```
+- so `__dirname` will just point at the absolute path of the directory we are in, 
+- here we are setting another condition from heroku supplied environment variables, asking if we are in production, and if we are we are adding a middleware for express to serve a static file to show in the browser when the server first loads, express will look in the "client/build" folder that we dont have yet to find the base index.html file from react to load
+- we can see this by taking this line out of the conditional and loading up our regular local express server (with no client side open yet), and changing the path to `app.use(express.static(path.join(__dirname, "client/public")));` and in our browser going to localhost:5000/favicon.ico, sicne that is a file int he public folder, and we will see the favicon loads, however it is not from react, it is just from our folders
+- and once we make a build folder we can point this at index.html and we will load our main app page, but again not through react
+- we cannot do that yet since we have not compiled our code into a build folder yet
+
+## db.js, Database Prep
+
+- here we want to set up our Pool connection for postgres for our dev and production builds
+- our dev connection is not going to change, but we want to hide all of the connection parameters in the environment variables, so we will be using dotenv and moving all the database connection stuff to .env:
+```
+PG_USER = 'postgres'
+PG_PW = '***'
+PG_HOST = localhost
+PG_PORT = 5432
+PG_DATABASE = 'todoapp'
+```
+- and now we just import them to be used in the db file:
+```
+require("dotenv").config
+
+const devConfig = {
+    user: process.env.PG_USER,
+    password: process.env.PG_PW,
+    port: process.env.PG_PORT,
+    database: process.env.PG_DATABASE
+};
+
+const proConfig = {
+    connectionString: process.env.DATABASE_URL // comes from heroku add-on that we config in heroku
+};
+
+const pool = new Pool(process.env.NODE_ENV === "production" ? proConfig : devConfig);
+```
+- so here we set them up as the `devConfig` option, and we also have a `proConfig` option that we do not actually have a variable for in our .env, and again, heroku will supply this for us for our postgres connection
+- we then again do a test to see if we are in dev or production and use the appropiate config to make the Pool connection
+
+## Setting Up Scripts in package.json
+
+- heroku will run certain scripts to run our app
+- there is a heroku-prebuild script that runs before dependencies are installed, an npminstall script that reads package.json to see what dependencies need to get installed, a heroku-postbuild script that will run after dependencies are installed, then a start script that will actually run the server.js file, 
+- and so we have to define all of these in the package.json file
+- so he says we have to define all of these and then we only define the start and heroku-postbuild scripts,
+    - we already have the start script here, as `"start": "node server.js"` in the scripts property
+    - we then make a new property: `"heroku-postbuild": "cd client && npm install && npm run build"`, so here we can just follow simple logic, we want heroku to cd into the client folder, them we want it to make npm install all the needed packages that our client needs with `npm install`, then we want it to run a build of our application to make the build folder we have been talking about with `npm run build`
+- now that we have this we want to set some things up on the client Side
+
+## Set Up Proxy in Client Side
+
+- so in his code he has an issue where his fetch requests are aiming at an absolute URL, localhost:5000/..., so he wants to set up a proxy so that we can use relative links,
+- we are already using a proxy, which we have defined in the package.json file with the `"proxy": "http://localhost:5000"` property that points at our local server for all of our API requests
+- we do not actually need to change anything about this proxy, this proxy is only used for development, but if the localhost is not found, then heroku will default it to the heroku domain in production, so we are all good
+- but we still need SOME srt of roxy set for production since we need to have all of the fetch requests be relative links, not absolute
+
+## Set up Engines in package.json and catchall Method
+
+- so we also want to define what versions of node and npm we are using in our package.json file, so that way heroku can use the same verisons and we hopefully wont have any issues
+- we do this pretty simply by just adding:
+```
+"engines": {
+    "node": "18.16.1",
+    "npm": "9.5.1"
+},
+```
+- to our file, and we can get the version numbers by doing `node -v` in our command line of course
+- we then also want to set up a catchall api endpoint, which is just going to get all the requests that do not get sent to one of the right paths, so we just make a new route at the end of the routes section of the server.js file with:
+```
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirName, "client/build/index.html"));
+});
+```
+- so this goes last so it only gets the leftovers not sent to other ones, and we define it as all routes with `*`, and just serve up the index page again so that it just goes back to the dashboard
+- we can also make a 404 page in react like we did for the movie app
+
+## Deploy to Heroku
+
+- 

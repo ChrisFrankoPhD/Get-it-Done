@@ -1,10 +1,14 @@
 const express = require('express');
 const app = express();
-const port = 5000;
+const path = require("path");
+const PORT = process.env.PORT || 5000;
 
 // MIDDLEWARE
 app.use(express.json());
 
+if (process.env.NODE_ENV === "production") {
+    app.use(express.static(path.join(__dirname, "client/public")));
+}
 //ROUTES//
 // register and login
 app.use("/auth", require("./routes/loginReg"));
@@ -12,8 +16,13 @@ app.use("/auth", require("./routes/loginReg"));
 // dashboard route
 app.use("/dashboard", require("./routes/dashboard"));
 
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirName, "client/build/index.html"));
+});
+
 // Start Server
-app.listen(port, () => {
-    console.log(`Express server started on port ${port}`);
+app.listen(PORT, () => {
+    console.log(`Express server started on port ${PORT}`);
 })
+
 
