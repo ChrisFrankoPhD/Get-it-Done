@@ -9,7 +9,7 @@ const devConfig = {
 };
 
 const proConfig = {
-    connectionString: process.env.DATABASE_URL // comes from heroku add-on that we config in heroku
+    connectionString: process.env.DATABASE_URL, // comes from heroku add-on that we config in heroku
     ssl: {
         rejectUnauthorized: false
     }
