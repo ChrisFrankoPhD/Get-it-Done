@@ -3373,4 +3373,36 @@ app.get("*", (req, res) => {
 
 ## Deploy to Heroku
 
-- 
+- i followed the youtube video(https://www.youtube.com/watch?v=ZJxUOOND5_A&t=582s) and the this heroku docs (https://devcenter.heroku.com/articles/getting-started-with-nodejs) to start my deploy
+- the deployment process to heroku is complicated at first but in all honestly is relatively simple since it is a platform as a service that is designed that way
+- unfortunately heroku got rid of their free tier so I decided to pay, ~$5 for lowest hosting tier, then an additional 5 for the postgres add on
+- so we make a heroku account, and we also have to download their command line interface (CLI), we then have to add teh heroku bin directory to our path to use the CLI commands
+- we can then log into heroku with `heroku login` just from our users folder or whenever in CMD
+- then we do `heroku create pern-todo-deploy`, where "pern-todo-deploy" is the name I choose for my app
+- **NOTE** this also creates a new git remote called heroku, where heroku will get the code to deploy from, so from now on when we make changes, we need to commit and push to our origin main, and if we want to add it to production, also to `git push heroku main`
+- we then have to add the database add on, which I did with `heroku addons:create heroku-postgresql:mini`, mini being the plan type I am using, and this will make a database on heroku for us, **however it has none of our data tables or info, which we have to add again manually, and is why we should always track all of our database stuff in the database.sql file so we can just copy and paste**
+- so now we can open this new heroku postgres database in our command line with the heroku CLI, we simply do `heroku pg:psql -a pern-todo-deploy`, where the `-a` is to define which app we want to connect to
+- then we are in a postgres command line interface just like we are used to and we can copy over our create table commands we used before
+- so after this we can try to open up and connect to our deployed app, assuming we have done `git push heroku main`, and I had some ossues from here I had to trouble shoot, most of which were just my mistakes
+    - In our server.json I had to change in the static serving files function: `app.use(express.static(path.join(__dirname, "client/public")));` to `app.use(express.static(path.join(__dirname, "client/build")));`, I had it set to public to test something earlier
+    - I also had some erros where it was trying to get the default react favicon.ico files, which I had deleted, and in the index.HTML file we can see that it was trying to get them for the pages favicon in a link element, so i removed that
+    - although some other things related to this still pop up they are not breaking, can not tell where it is requesting them in the react structure, I thnk in manifest.json in the public folder
+    - also **we were not able to connect to the database**, which I had to fix by following the heroku docs closer, my original db,js file proConfig looked like:
+    ```
+    const proConfig = {
+        connectionString: process.env.DATABASE_URL, // comes from heroku add-on that we config in heroku
+    };
+    ```
+    - but I needed to add an ssl property that specifies the type of connection, this is apparently mandatory in the newer heroku, since in the outube video i was following he did not need to do this, so now it looks like:
+    ```
+    const proConfig = {
+        connectionString: process.env.DATABASE_URL, // comes from heroku add-on that we config in heroku
+        ssl: {
+            rejectUnauthorized: false
+        }
+    };
+    ```
+- lastly, and this is more liek a main step since it is mandatory, the JWT generator was of course not able to retreive the secret keys for the JWT authentication since we do not commit the .env file, in heroku we specify environment variables in the online app or in the CLI, and they get added to a list, we also see the `DATABASE_URL` env also comes from here but heroku makes it automatically for the database when we make one
+- so to do this we have to do `heroku config:set jwtsecret=***`, where we write our actual secret instead of "***" of course (also we may have to specify the app it is for with `-a pern-todo-deploy` but I am not sure, cant remember wha I did, can just try it without and if it says you need an app name then add it)
+- so after all the chnages I made you can push to heroku again, but the env stuff isnt part of your code so that doesnt matter, and then you can do `heroku ps:scale web=1` to run an instance, and then `heroku open` to open the link to the app! 
+- and for me it worked from here, added some other stuff as well but the app was working!
