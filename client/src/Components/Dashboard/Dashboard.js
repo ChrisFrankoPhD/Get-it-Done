@@ -28,30 +28,6 @@ const Dashboard = ({ searchText, setAuth }) => {
         } catch (error) {
             console.error(error.message);
         }
-        // DEPRECIATED SEARCH FUNCTIONALITY, MOVED THIS TO BE CLIENT SIDE ONLY
-        // try {
-        //     if (!searchText.trim()) {
-        //         const response = await fetch("/dashboard/", {
-        //             method: "GET",
-        //             headers: { token: localStorage.token }
-        //         });
-        //         const data = await response.json();
-        //         console.log(data);
-        //         setName(data[0].user_name)
-        //         setAllTodos(data);
-        //     } else {
-        //         const response = await fetch(`/dashboard/todos/search/${searchText}`, {
-        //             method: "GET",
-        //             headers: { token: localStorage.token }
-        //         });
-        //         const data = await response.json();
-        //         console.log(data);
-        //         setAllTodos(data);
-        //     }
-        //     // console.log(allTodos);
-        // } catch (error) {
-        //     console.error(error.message);
-        // }
     }
 
     useEffect(() => {

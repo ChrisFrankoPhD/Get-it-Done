@@ -1,15 +1,15 @@
+// React
 import './App.css';
 import { Routes, Route, Navigate, } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-
 // Components
 import Dashboard from './Components/Dashboard/Dashboard';
 import Login from './Components/Login';
 import Register from './Components/Register';
-
+import NavBar from './Components/Dashboard/NavBar';
+// Toastify Notifications
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import NavBar from './Components/Dashboard/NavBar';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

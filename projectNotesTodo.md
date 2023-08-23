@@ -3349,7 +3349,7 @@ const pool = new Pool(process.env.NODE_ENV === "production" ? proConfig : devCon
 - so in his code he has an issue where his fetch requests are aiming at an absolute URL, localhost:5000/..., so he wants to set up a proxy so that we can use relative links,
 - we are already using a proxy, which we have defined in the package.json file with the `"proxy": "http://localhost:5000"` property that points at our local server for all of our API requests
 - we do not actually need to change anything about this proxy, this proxy is only used for development, but if the localhost is not found, then heroku will default it to the heroku domain in production, so we are all good
-- but we still need SOME srt of roxy set for production since we need to have all of the fetch requests be relative links, not absolute
+- but we still need SOME sort of proxy set for production since we need to have all of the fetch requests be relative links, not absolute
 
 ## Set up Engines in package.json and catchall Method
 
