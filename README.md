@@ -13,6 +13,7 @@
     - [Search](#5-search-todos)
     - [Delete](#6-delete-todos)
     - [Logout](#7-logout)
+- [Next Steps](#whats-next)
 - [Credit](#credit)
 
 ## Description
@@ -63,6 +64,10 @@
     ### 7. Logout
 
     - On logout, which resides in the Navbar, the JWT token is removed from local storage, and `setAuth` is set to false, which navigates us to the login page
+
+## What's Next?
+
+- I would love to add a feature to drag and drop todo items to reorder them, however saving the reordered list in the database is not trivial, will need to think of a good solution
 
 ## Credit
 
