@@ -22,7 +22,7 @@ const NavBar = ({searchText, setSearchText, setAuth}) => {
     return (
         <nav className="navbar navbar-expand-md bg-body-tertiary">
           <div className="w-100 container-md">
-            <Link className="navbar-brand ms-2" to="/">ToDo ~ <i>Beta</i></Link>
+            <Link className="navbar-brand ms-2" to="/">Get it Done ~ <i>Beta</i></Link>
             <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" onClick={() => {setSearchText("")}}>
               <span className="navbar-toggler-icon"></span>
             </button>

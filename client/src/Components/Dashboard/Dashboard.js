@@ -41,7 +41,7 @@ const Dashboard = ({ searchText, setAuth }) => {
             <main className="container text-center mt-4">
                 <div className="row d-flex flex-column justify-content-center">
                     <div className='d-flex flex-column w-100 align-items-center p-0'>
-                        <h1>{name}'s ToDo List</h1>
+                        <h1>{name}'s List</h1>
                     </div>
                     <InputTodo setTodosChange={setTodosChange} />
                     <ListTodo allTodos={allTodos} setTodosChange={setTodosChange} searchText={searchText} />
